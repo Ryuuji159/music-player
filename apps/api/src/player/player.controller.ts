@@ -25,4 +25,9 @@ export class PlayerController {
         await this.player.pause();
     }
     
+    @Post("/events/ended")
+    async ended() {
+        await this.player.ended();
+    }
+
 }

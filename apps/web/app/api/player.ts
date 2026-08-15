@@ -14,4 +14,7 @@ export const playerAPI = {
     pause: () => {
         return request("/player/pause", z.unknown(), { method: "POST" });
     },
+    ended: () => {
+        return request("/player/events/ended", z.unknown(), { method: "POST" });
+    },
 };

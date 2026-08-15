@@ -1,6 +1,5 @@
 import { MediaItemDto, QueueItemDto } from "@skrd/contracts";
 import { MediaItem, QueueItem } from "../prisma/generated/prisma/client";
-import { time } from "node:console";
 
 function durationToSeconds(iso: string): number {
     return Math.round(Temporal.Duration.from(iso).total("seconds"));

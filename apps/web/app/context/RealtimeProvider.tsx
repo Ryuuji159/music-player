@@ -7,10 +7,10 @@ type Props = {
     children: ReactNode;
 }
 
-export const RealTimeProvider = ({children}: Props) => {
+export const RealTimeProvider = ({ children }: Props) => {
     const [lastEvent, setLastEvent] = useState<RealtimeEvent | null>(null);
     const [isConnected, setIsConnected] = useState<boolean>(false);
-    const [error, setError] = useState<string|null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const eventSource = createRealtimeClient();
@@ -19,7 +19,10 @@ export const RealTimeProvider = ({children}: Props) => {
             const message = event as MessageEvent<string>;
 
             try {
-                const parsed = realtimeEventSchema.parse(JSON.parse(message.data));
+                const parsed = realtimeEventSchema.parse({
+                    type: message.type,
+                    data: JSON.parse(message.data),
+                });
                 setLastEvent(parsed);
             } catch {
                 setError("No se pudo interpretar el evento SSE");
@@ -43,9 +46,9 @@ export const RealTimeProvider = ({children}: Props) => {
             eventSource.close();
         }
     }, []);
-    
+
     return (
-        <RealtimeContext.Provider value={{lastEvent, isConnected, error}}>
+        <RealtimeContext.Provider value={{ lastEvent, isConnected, error }}>
             {children}
         </RealtimeContext.Provider>
     )

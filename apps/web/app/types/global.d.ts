@@ -1,5 +1,6 @@
 declare namespace YT {
     const PlayerState: {
+        UNSTARTED: -1;
         ENDED: 0,
         PLAYING: 1;
         PAUSED: 2;
@@ -13,11 +14,11 @@ declare namespace YT {
     }
 
     type PlayerOptions = {
-        videoId: string;
+        videoId?: string;
         playerVars?: Record<string, number | string>,
         width?: string;
         height?: string;
-        events: ?{
+        events?: {
             onReady?: (event: PlayerEvent) => void;
             onStateChange?: (event: PlayerEvent) => void;
             onError?: (event: PlayerEvent) => void;

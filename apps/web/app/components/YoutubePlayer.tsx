@@ -1,29 +1,44 @@
-import { useEffect, useImperativeHandle, useRef } from "react";
+import React, { useEffect, useImperativeHandle, useRef } from "react";
 
 export interface PlayerAction {
   play: (videoId: string | null) => void;
   pause: () => void;
+  stop: () => void;
 }
 
-export const YoutubePlayer = ({ videoId, ref }: { videoId: string, ref: React.Ref<PlayerAction> }) => {
+type Props = {
+  onEnded: () => void;
+  ref?: React.Ref<PlayerAction>;
+}
+
+export const YoutubePlayer = ({ onEnded, ref }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YT.Player>(null);
+  const onEndedRef = useRef(onEnded);
+  const pendingVideoIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    onEndedRef.current = onEnded;
+  }, [onEnded]);
 
   useImperativeHandle(ref, () => ({
-    play(videoId: string | null) {
-      console.log("PLAY???");
-
-      if(videoId) {
-        playerRef.current?.loadVideoById(videoId);
-      } else {
-        playerRef.current?.playVideo();
+    play(videoId) {
+      if (videoId) {
+        pendingVideoIdRef.current = videoId;
+        if (playerRef.current) {
+          playerRef.current.loadVideoById(videoId);
+          pendingVideoIdRef.current = null;
+        }
+      } else if (playerRef.current) {
+        playerRef.current.playVideo();
       }
     },
-
     pause() {
-      console.log("Pause???");
       playerRef.current?.pauseVideo();
-    }
+    },
+    stop() {
+      playerRef.current?.stopVideo();
+    },
   }));
 
   useEffect(() => {
@@ -31,26 +46,21 @@ export const YoutubePlayer = ({ videoId, ref }: { videoId: string, ref: React.Re
       if (!containerRef.current) return;
 
       playerRef.current = new window.YT.Player(containerRef.current, {
-        videoId,
-
         width: "100%",
         height: "100%",
-
-        playerVars: {
-          playsinline: 1
-        },
-
+        playerVars: { playsinline: 1 },
         events: {
           onReady: (event) => {
-            console.log("Player listo", event.target);
+            const pending = pendingVideoIdRef.current;
+            if(pending) {
+              playerRef.current?.loadVideoById(pending);
+              pendingVideoIdRef.current = null;
+            }
           },
-
           onStateChange: (event) => {
-            console.log("Estado:", event.data);
-          },
-
-          onError: (event) => {
-            console.error("Error de YouTube:", event.data);
+            if(event.data === YT.PlayerState.ENDED) {
+              onEndedRef.current?.();
+            }
           },
         },
       });
@@ -63,10 +73,8 @@ export const YoutubePlayer = ({ videoId, ref }: { videoId: string, ref: React.Re
 
     if (!document.getElementById("youtube-iframe-api")) {
       const script = document.createElement("script");
-
       script.id = "youtube-iframe-api";
       script.src = "https://www.youtube.com/iframe_api";
-
       document.body.appendChild(script);
     }
 
@@ -78,12 +86,5 @@ export const YoutubePlayer = ({ videoId, ref }: { videoId: string, ref: React.Re
     }
   }, []);
 
-  useEffect(() => {
-    console.log(videoId);
-    if (playerRef.current?.loadVideoById) {
-      playerRef.current.loadVideoById(videoId);
-    }
-  }, [videoId]);
-
-  return <div ref={containerRef} />;
+  return <div ref={containerRef} className="h-full w-full"/>;
 }

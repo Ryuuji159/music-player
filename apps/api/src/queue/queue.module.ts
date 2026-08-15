@@ -9,6 +9,7 @@ import { RealtimeModule } from "../realtime/realtime.module";
 @Module({
     imports: [PrismaModule, YoutubeModule, RealtimeModule],
     controllers: [QueueController],
-    providers: [QueueService, MediaService]
+    providers: [QueueService, MediaService],
+    exports: [QueueService]
 })
 export class QueueModule {}

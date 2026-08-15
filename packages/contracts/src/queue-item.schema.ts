@@ -4,7 +4,7 @@ import { mediaItemSchema } from "./media-item.schema";
 export const queueItemSchema = z.object({
     id: z.uuid(),
     position: z.number(),
-    status: z.enum(["queued", "playing", "paused", "ended"]),
+    status: z.enum(["queued", "playing", "paused"]),
     media: mediaItemSchema
 })
 
