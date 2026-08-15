@@ -17,4 +17,7 @@ export const playerAPI = {
     ended: () => {
         return request("/player/events/ended", z.unknown(), { method: "POST" });
     },
+    playItem: (id: string) => {
+        return request(`/player/item/${id}/play`, z.unknown(), { method: "POST" });
+    },
 };

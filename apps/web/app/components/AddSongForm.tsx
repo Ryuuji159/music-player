@@ -1,5 +1,4 @@
 import { useState, type SubmitEventHandler } from "react"
-import { ur } from "zod/locales";
 import { queueAPI } from "~/api/queue";
 
 export const AddSongForm = () => {
@@ -25,15 +24,15 @@ export const AddSongForm = () => {
                 <input
                     value={url}
                     onChange={e => setUrl(e.target.value)}
-                    placeholder="Pega una URL de Youtube"
-                    className="min-w-0 flex-1 rounded bg-white/10 px-3 py-2 text-white outline-none focus:bg-white/15"
+                    placeholder="Pega una URL de YouTube"
+                    className="min-w-0 flex-1 border-2 border-ink bg-surface-card px-3 py-2 text-ink outline-none focus:border-accent"
                 />
-                <button type="submit" className="rounded bg-white/10 px-4 py-2 text-white hover:bg-white/20">
+                <button type="submit" className="cursor-pointer border-2 border-ink bg-accent px-4 py-2 font-bold uppercase tracking-wide text-accent-ink hover:bg-accent/90">
                     Añadir
                 </button>
             </form>
             {status && (
-                <p className={`text-sm ${status.type === 'error' ? "text-red-400" : "text-green-400"}`}>
+                <p className={`text-sm ${status.type === 'error' ? "text-red-500" : "text-green-600"}`}>
                     {status.message}
                 </p>
             )}

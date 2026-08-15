@@ -53,6 +53,23 @@ export class PlayerService {
         await this.emitQueueUpdated();
     }
 
+    async playItem(queueItemId: string) {
+        const item = await this.prisma.queueItem.findFirst({
+            select: { id: true },
+            where: { id: queueItemId },
+        });
+        if (!item) return;
+
+        await this.clearPlaying();
+        await this.prisma.queueItem.update({
+            where: { id: item.id },
+            data: { status: "playing" },
+        });
+
+        await this.emitPlayerCommand("play", item.id);
+        await this.emitQueueUpdated();
+    }
+
     async pause() {
         const playing = await this.prisma.queueItem.findFirst({
             select: { id: true },

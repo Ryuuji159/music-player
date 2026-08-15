@@ -1,5 +1,7 @@
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { PlayerService } from "./player.service";
+import { ZodValidationPipe } from "../zod-validation.pipe";
+import z from "zod";
 
 @Controller('/player')
 export class PlayerController {
@@ -28,6 +30,13 @@ export class PlayerController {
     @Post("/events/ended")
     async ended() {
         await this.player.ended();
+    }
+
+    @Post("/item/:id/play")
+    async playItem(
+        @Param("id", new ZodValidationPipe(z.uuid())) queueItemId: string,
+    ) {
+        await this.player.playItem(queueItemId);
     }
 
 }
