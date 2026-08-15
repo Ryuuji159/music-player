@@ -8,6 +8,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum QueueStatus {
+  queued
+  playing
+  paused
+}
+
 model MediaItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
  
@@ -25,7 +31,7 @@ model QueueItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   
   position Float
-  status String @default("queued")
+  status QueueStatus @default(queued)
   mediaId String @db.Uuid
 
   media MediaItem @relation(fields: [mediaId], references: [id])
