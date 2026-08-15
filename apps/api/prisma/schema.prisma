@@ -1,0 +1,32 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/prisma/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model MediaItem {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ 
+  videoId String
+  title String
+  channelTitle String
+  thumbnailUrl String
+  duration String
+  embeddable Boolean
+
+  queues QueueItem[]
+}
+
+model QueueItem {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  
+  position Float
+  status String @default("queued")
+  mediaId String @db.Uuid
+
+  media MediaItem @relation(fields: [mediaId], references: [id])
+}

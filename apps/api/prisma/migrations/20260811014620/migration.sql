@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "QueueItem" ALTER COLUMN "position" SET DATA TYPE DOUBLE PRECISION;

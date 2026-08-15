@@ -1,0 +1,11 @@
+{
+    "name": "player",
+    "private": true,
+    "workspaces": ["apps/*", "packages/*"],
+    "scripts": {
+        "build": "npm run build -w @skrd/contracts && npm run build -w api && npm run build -w web",
+        "dev:api": "npm run start:dev -w api",
+        "dev:web": "npm run dev -w web",
+        "typecheck": "npm run build -w @skrd/contracts && npm run typecheck -w web && npm run build -w api"
+    }
+}
