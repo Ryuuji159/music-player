@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
-import type { Route } from "../+types/root";
+import type { Route } from "./+types/player";
 import { YoutubePlayer, type PlayerAction } from "~/components/YoutubePlayer";
 import { useRealtime } from "~/context/RealtimeContext";
 import { playerAPI } from "~/api/player";
 import { Queue } from "~/components/Queue";
+import { QueueManager } from "~/components/QueueManager";
 
 export function meta({ }: Route.MetaArgs) {
     return [{ title: "Player" }];
@@ -27,7 +28,6 @@ export default function Player() {
         else if (action === "stop") playerActionRef.current?.stop();
     }, [lastEvent]);
 
-    const btn = "rounded bg-white/10 px-4 py-2 text-white hover:bg-white/20";
 
     return (
         <div className="max-h-screen h-screen w-screen bg-black">
@@ -40,12 +40,6 @@ export default function Player() {
                 </div>
                 <div className="col-span-2 flex min-h-0 flex-col gap-2 m-2">
                     <Queue/>
-                    <div className="flex gap-2">
-                        <button className={btn} onClick={() => playerAPI.previous().catch(console.error)}>⏮</button>
-                        <button className={btn} onClick={() => playerAPI.play().catch(console.error)}>▶</button>
-                        <button className={btn} onClick={() => playerAPI.pause().catch(console.error)}>⏸</button>
-                        <button className={btn} onClick={() => playerAPI.next().catch(console.error)}>⏭</button>
-                    </div>
                 </div>
             </div>
         </div>

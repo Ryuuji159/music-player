@@ -48,7 +48,7 @@ export const YoutubePlayer = ({ onEnded, ref }: Props) => {
       playerRef.current = new window.YT.Player(containerRef.current, {
         width: "100%",
         height: "100%",
-        playerVars: { playsinline: 1 },
+        playerVars: {  },
         events: {
           onReady: (event) => {
             const pending = pendingVideoIdRef.current;
