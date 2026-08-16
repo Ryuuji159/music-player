@@ -11,3 +11,6 @@ export const mediaItemSchema = z.object({
 })
 
 export type MediaItemDto = z.infer<typeof mediaItemSchema>;
+
+export const mediaListSchema = z.array(mediaItemSchema);
+export type MediaListDto = z.infer<typeof mediaListSchema>;

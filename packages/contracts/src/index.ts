@@ -7,3 +7,6 @@ export * from "./queue-item.schema";
 export * from "./realtime-event.schema";
 export * from "./youtube-id.schema";
 export * from "./youtube-url.schema";
+export * from "./playlist.schema";
+export * from "./playlist-url.schema";
+export * from "./register-playlist.schema";

@@ -7,7 +7,11 @@ import { toQueueItemDto } from "./queue.mapper";
 
 @Injectable()
 export class QueueService {
-    constructor(private prisma: PrismaService, private mediaService: MediaService, private events: EventsService) { }
+    constructor(
+        private prisma: PrismaService,
+        private mediaService: MediaService,
+        private events: EventsService
+    ) { }
 
     async current(): Promise<QueueItemDto[]> {
         const items = await this.prisma.queueItem.findMany({
@@ -24,18 +28,7 @@ export class QueueService {
         const media = await this.mediaService.resolve(videoId);
         if (!media) return null;
 
-        const last = await this.prisma.queueItem.findFirst({
-            select: { position: true },
-            orderBy: { position: 'desc' }
-        });
-
-        await this.prisma.queueItem.create({
-            data: {
-                position: last ? last.position + 1000 : 1000,
-                mediaId: media.id,
-            }
-        })
-
+        await this.enqueue(media.id);
         await this.emitQueueUpdated();
     }
 
@@ -80,6 +73,20 @@ export class QueueService {
 
     async push() {
         await this.emitQueueUpdated();
+    }
+
+    async enqueue(mediaId: string) {
+        const last = await this.prisma.queueItem.findFirst({
+            select: { position: true },
+            orderBy: { position: "desc" },
+        });
+
+        return this.prisma.queueItem.create({
+            data: {
+                position: last ? last.position + 1000 : 1000,
+                mediaId,
+            }
+        });
     }
 
     private async getMovePosition(queueItemId: string, siblingPosition: number, placement: "before" | "after") {

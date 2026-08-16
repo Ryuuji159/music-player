@@ -9,7 +9,6 @@ export class PrismaService extends PrismaClient {
         const adapter = new PrismaPg({ connectionString: config.getOrThrow("DATABASE_URL") });
         super({
             adapter: adapter,
-            log: ['query']
         });
     }
 }

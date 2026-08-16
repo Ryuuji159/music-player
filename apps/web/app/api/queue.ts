@@ -9,6 +9,9 @@ export const queueAPI = {
     append: (url: string) => {
         return request("/queue/append", z.unknown(), { method: "POST", body: JSON.stringify({ url }) });
     },
+    appendVideo: (videoId: string) => {
+        return request(`/queue/append/video/${videoId}`, z.unknown(), { method: "POST" });
+    },
     move: (id: string, siblingId: string, placement: "before" | "after") => {
         return request(`/queue/item/${id}/move`, z.unknown(), { method: "POST", body: JSON.stringify({ siblingId, placement }) });
     },

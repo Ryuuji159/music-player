@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, UsePipes } from "@nestjs/common";
 import { QueueService } from "./queue.service";
 import { ZodValidationPipe } from "../zod-validation.pipe";
-import { type AppendToQueueDto, appendToQueueSchema, type MoveQueueDto, moveQueueSchema } from "@skrd/contracts";
+import { type AppendToQueueDto, appendToQueueSchema, type MoveQueueDto, moveQueueSchema, type YoutubeId, youtubeIdSchema } from "@skrd/contracts";
 import z from "zod";
 
 @Controller('/queue')
@@ -18,6 +18,13 @@ export class QueueController {
         @Body(new ZodValidationPipe(appendToQueueSchema)) appendToQueueDTO: AppendToQueueDto
     ) {
         await this.queueService.append(appendToQueueDTO);
+    }
+
+    @Post('/append/video/:videoId')
+    async appendByVideoId(
+        @Param("videoId", new ZodValidationPipe(youtubeIdSchema)) videoId: YoutubeId
+    ) {
+        await this.queueService.append({ videoId });
     }
 
     @Post('/item/:id/move')

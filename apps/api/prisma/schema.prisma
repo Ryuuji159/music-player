@@ -16,23 +16,45 @@ enum QueueStatus {
 
 model MediaItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
- 
-  videoId String
-  title String
+
+  videoId      String
+  title        String
   channelTitle String
   thumbnailUrl String
-  duration String
-  embeddable Boolean
+  duration     String
+  embeddable   Boolean
 
-  queues QueueItem[]
+  queues        QueueItem[]
+  playlistItems PlaylistItem[]
 }
 
 model QueueItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  
+
   position Float
-  status QueueStatus @default(queued)
-  mediaId String @db.Uuid
+  status   QueueStatus @default(queued)
+  mediaId  String      @db.Uuid
 
   media MediaItem @relation(fields: [mediaId], references: [id])
 }
+
+model Playlist {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playlistId   String         @unique
+  title        String
+  thumbnailUrl String?
+  createdAt    DateTime       @default(now())
+  items        PlaylistItem[]
+}
+
+model PlaylistItem {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playlistId String    @db.Uuid
+  mediaId    String    @db.Uuid
+  position   Int
+  playlist   Playlist  @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  media      MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, mediaId])
+}
+

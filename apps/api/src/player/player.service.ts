@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { EventsService } from "../realtime/events.service";
 import { QueueService } from "../queue/queue.service";
+import { PlaylistService } from "../playlist/playlist.service";
 
 type CommandAction = "play" | "pause" | "stop";
 
@@ -11,6 +12,7 @@ export class PlayerService {
         private prisma: PrismaService,
         private events: EventsService,
         private queueService: QueueService,
+        private playlistService: PlaylistService
     ) { }
 
     async play() {
@@ -42,7 +44,10 @@ export class PlayerService {
             select: { id: true },
             orderBy: { position: "asc" },
         });
-        if (!first) return;
+        if (!first) {
+            await this.playBackup();
+            return;
+        };
 
         await this.clearPlaying();
         await this.prisma.queueItem.update({
@@ -137,8 +142,7 @@ export class PlayerService {
         await this.clearPlaying();
 
         if (!nextItem) {
-            await this.emitPlayerCommand("stop", null);
-            await this.emitQueueUpdated();
+            await this.playBackup();
             return;
         }
 
@@ -161,17 +165,17 @@ export class PlayerService {
     private async emitPlayerCommand(action: CommandAction, itemId: string | null) {
         let videoId: string | null = null;
 
-        if(itemId) {
+        if (itemId) {
             const item = await this.prisma.queueItem.findFirst({
-                where: {id: itemId},
-                include: {media: {select: {videoId: true}}},
+                where: { id: itemId },
+                include: { media: { select: { videoId: true } } },
             });
-            if(item) videoId = item.media.videoId;
+            if (item) videoId = item.media.videoId;
         }
 
         this.events.emit({
             type: "player.command",
-            data: {action, videoId}
+            data: { action, videoId }
         });
     }
 
@@ -180,5 +184,24 @@ export class PlayerService {
             type: "queue.updated",
             data: await this.queueService.current(),
         })
+    }
+
+    private async playBackup() {
+        const media = await this.playlistService.randomMedia();
+        if (!media) {
+            await this.emitPlayerCommand("stop", null);
+            await this.emitQueueUpdated();
+            return;
+        }
+
+        const item = await this.queueService.enqueue(media.id);
+        await this.clearPlaying()
+        await this.prisma.queueItem.update({
+            where: { id: item.id },
+            data: { status: "playing" },
+        });
+
+        await this.emitPlayerCommand("play", item.id);
+        await this.emitQueueUpdated();
     }
 }

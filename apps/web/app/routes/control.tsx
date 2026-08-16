@@ -4,6 +4,7 @@ import { playerAPI } from "~/api/player";
 import { QueueManager } from "~/components/QueueManager";
 import { AddSongForm } from "~/components/AddSongForm";
 import { AddPlaylist } from "~/components/AddPlaylist";
+import { MediaLibrary } from "~/components/MediaLibrary";
 import { SongRequests } from "~/components/SongRequests";
 import { ControlHeader } from "~/components/ControlHeader";
 
@@ -46,6 +47,8 @@ export default function Control() {
                             </button>
                         </div>
                     </section>
+
+                    <MediaLibrary />
 
                     <AddPlaylist />
 

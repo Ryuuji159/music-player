@@ -4,6 +4,7 @@ import { QueueModule } from './queue/queue.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { PlayerModule } from './player/player.module';
+import { PlaylistModule } from './playlist/playlist.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PlayerModule } from './player/player.module';
     QueueModule,
     PlayerModule,
     YoutubeModule,
+    PlaylistModule,
   ],
 })
 export class AppModule { }

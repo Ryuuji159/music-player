@@ -29,3 +29,26 @@ export const youtubeListSchema = z
     })
 
 export type YoutubeList = z.infer<typeof youtubeListSchema>
+
+export const youtubeVideoItemLenientSchema = z.object({
+    id: youtubeIdSchema,
+    snippet: z.object({
+        title: z.string(),
+        channelTitle: z.string(),
+        thumbnails: z.object({
+            default: z.object({
+                url: z.url(),
+            })
+        }).optional(),
+    }),
+    contentDetails: z.object({
+        duration: videoDurationSchema
+    }).optional(),
+    status: z.object({
+        embeddable: z.boolean()
+    }).optional(),
+});
+
+export const youtubeListLenientSchema = z.object({
+    items: z.array(youtubeVideoItemLenientSchema).default([]),
+});
