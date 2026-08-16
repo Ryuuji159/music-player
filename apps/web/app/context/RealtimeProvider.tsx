@@ -16,6 +16,9 @@ type Props = {
   children: ReactNode;
 };
 
+const RECONNECT_INITIAL_DELAY = 1_000;
+const RECONNECT_MAX_DELAY = 30_000;
+
 export const RealTimeProvider = ({ children }: Props) => {
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -34,7 +37,10 @@ export const RealTimeProvider = ({ children }: Props) => {
   }, []);
 
   useEffect(() => {
-    const eventSource = createRealtimeClient();
+    let eventSource: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectDelay = RECONNECT_INITIAL_DELAY;
+    let disposed = false;
 
     const dispatch = (event: Event) => {
       const message = event as MessageEvent<string>;
@@ -53,22 +59,44 @@ export const RealTimeProvider = ({ children }: Props) => {
       }
     };
 
-    eventSource.onopen = () => {
-      setIsConnected(true);
-      setError(null);
+    const connect = () => {
+      if (disposed) return;
+
+      const source = createRealtimeClient();
+      eventSource = source;
+
+      source.onopen = () => {
+        setIsConnected(true);
+        setError(null);
+        reconnectDelay = RECONNECT_INITIAL_DELAY;
+      };
+
+      source.onerror = () => {
+        setIsConnected(false);
+        setError('Se perdió la conexión SSE');
+        source.close();
+        if (eventSource === source) eventSource = null;
+
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          connect();
+        }, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX_DELAY);
+      };
+
+      source.addEventListener('queue.updated', dispatch);
+      source.addEventListener('player.command', dispatch);
+      source.addEventListener('requests.updated', dispatch);
     };
 
-    eventSource.onerror = () => {
-      setIsConnected(false);
-      setError('Se perdió la conexión SSE');
-    };
-
-    eventSource.addEventListener('queue.updated', dispatch);
-    eventSource.addEventListener('player.command', dispatch);
-    eventSource.addEventListener('requests.updated', dispatch);
+    connect();
 
     return () => {
-      eventSource.close();
+      disposed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      eventSource?.close();
+      eventSource = null;
     };
   }, []);
 
