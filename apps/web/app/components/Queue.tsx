@@ -9,17 +9,14 @@ export const Queue = () => {
           <p className="p-3 text-ink-muted">La cola está vacía</p>
         ) : (
           <ul className="divide-y divide-line">
-            {queue.map((item, index) => {
+            {queue.map((item) => {
               const isCurrent = item.status === "playing" || item.status === "paused";
               return (
-                <li key={item.id} className={`grid grid-cols-12 gap-1 ${isCurrent ? "bg-accent/10" : ""}`}>
-                  <div className="col-span-1 flex items-center justify-center">
-                    <span className="text-ink-muted">{index + 1}</span>
+                <li key={item.id} className={`flex gap-3 ${isCurrent ? "bg-accent/10" : ""}`}>
+                  <div className="shrink-0 p-px">
+                    <img src={item.media.thumbnailUrl} alt="" className="h-12 w-20 object-cover" />
                   </div>
-                  <div className="col-span-3 p-px">
-                    <img src={item.media.thumbnailUrl} alt="" className="object-contain" />
-                  </div>
-                  <div className="min-w-0 col-span-8 flex flex-col justify-center">
+                  <div className="min-w-0 flex flex-col justify-center">
                     <p className="truncate font-medium text-ink">
                       {item.media.title}
                       {item.status === "playing" && <span className="text-accent"> ●</span>}

@@ -97,7 +97,7 @@ export class PlayerService {
     async previous() {
         const current = await this.prisma.queueItem.findFirst({
             select: { id: true, position: true },
-            where: { status: "playing" },
+            where: { status: { in: ["playing", "paused"] } },
         });
 
         const currentPosition = current ? current.position : Infinity;
@@ -122,7 +122,7 @@ export class PlayerService {
     private async advance(requirePlaying: boolean) {
         const current = await this.prisma.queueItem.findFirst({
             select: { id: true, position: true },
-            where: { status: "playing" }
+            where: { status: { in: ["playing", "paused"] } },
         });
 
         if (requirePlaying && !current) return;
@@ -153,7 +153,7 @@ export class PlayerService {
 
     private async clearPlaying() {
         await this.prisma.queueItem.updateMany({
-            where: { status: "playing" },
+            where: { status: { in: ["playing", "paused"] } },
             data: { status: "queued" },
         })
     }

@@ -3,7 +3,7 @@ services:
     image: postgres:18
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTRGES_DB:-player}
+      POSTGRES_DB: ${POSTGRES_DB:-player}
       POSTGRES_USER: ${POSTGRES_USER:-player}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports:

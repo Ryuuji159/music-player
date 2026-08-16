@@ -10,7 +10,7 @@ export function meta({ }: Route.MetaArgs) {
 export default function Client() {
     return (
         <div className="min-h-screen w-screen bg-surface text-ink">
-            <div className="mx-auto flex max-w-md flex-col gap-4 p-4">
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 sm:p-6">
                 <header className="flex flex-col items-center gap-2 pt-6">
                     <h1 className="text-2xl font-bold uppercase tracking-tight">Pide tu canción</h1>
                     <p className="text-sm text-ink-muted">Pega una URL de YouTube para añadirla a la cola</p>

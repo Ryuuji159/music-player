@@ -58,7 +58,7 @@ export const QueueManager = () => {
   const [queue, setQueue] = useQueue();
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex min-h-0 flex-1 flex-col gap-2">
       <NowPlaying />
       <DragDropProvider onDragEnd={(event) => {
         if (event.canceled) return;
@@ -84,7 +84,7 @@ export const QueueManager = () => {
         setQueue(next);
         queueAPI.move(draggedId, siblingId, placement).catch(console.error);
       }}>
-        <ul className="divide-y divide-line border-2 border-ink">
+        <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto border-2 border-ink">
           {queue.map((item, index) => (
             <SortableRow key={item.id} item={item} index={index} onRemove={(id) => queueAPI.remove(id).catch(console.error)} onPlay={(id) => playerAPI.playItem(id).catch(console.error)} />
           ))}
