@@ -22,7 +22,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(loginSchema)) dto: LoginDto,
     @Req() req: Request,
   ): Promise<UserDto> {
-    const user = await this.auth.validate(dto.username, dto.password);
+    const user = await this.auth.validate(dto.email, dto.password);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     req.session!.userId = user.id;

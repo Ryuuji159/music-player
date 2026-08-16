@@ -4,9 +4,13 @@ import type { AuthUser } from './auth.types';
 export function toUserDto(user: AuthUser): UserDto {
   return {
     id: user.id,
-    username: user.username,
+    name: user.name,
+    email: user.email,
     role: user.role,
-    venueId: user.venueId,
-    venueSlug: user.venue?.slug ?? null,
+    venues: user.venues.map((v) => ({
+      id: v.id,
+      slug: v.slug,
+      name: v.name,
+    })),
   };
 }

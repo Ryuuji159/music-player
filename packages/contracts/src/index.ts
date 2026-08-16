@@ -19,3 +19,6 @@ export * from './youtube-url.schema';
 export * from './playlist.schema';
 export * from './playlist-url.schema';
 export * from './register-playlist.schema';
+export * from './slugify';
+export * from './update-venue.schema';
+export * from './update-user.schema';

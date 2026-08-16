@@ -16,8 +16,21 @@ export function useVenues() {
 export function useCreateVenue() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (args: { slug: string; name: string }) =>
-      venuesAPI.create(args.slug, args.name),
+    mutationFn: (args: { name: string; slug?: string }) =>
+      venuesAPI.create(args),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: venueKeys.all });
+    },
+  });
+}
+
+export function useUpdateVenue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (args: {
+      id: string;
+      input: Parameters<typeof venuesAPI.update>[1];
+    }) => venuesAPI.update(args.id, args.input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: venueKeys.all });
     },

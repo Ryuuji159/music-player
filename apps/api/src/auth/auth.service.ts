@@ -21,10 +21,10 @@ export class AuthService {
     );
   }
 
-  async validate(username: string, password: string): Promise<AuthUser | null> {
+  async validate(email: string, password: string): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
-      where: { username },
-      include: { venue: true },
+      where: { email },
+      include: { venues: true },
     });
     if (!user) return null;
     if (!verifyPassword(password, user.passwordHash)) return null;

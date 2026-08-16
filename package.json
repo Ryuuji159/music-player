@@ -8,6 +8,7 @@
   "scripts": {
     "build": "npm run build -w @skrd/contracts && npm run build -w api && npm run build -w web",
     "dev:api": "npm run start:dev -w api",
+    "seed": "npm run seed -w api",
     "dev:web": "npm run dev -w web",
     "dev:contracts": "npm run dev -w @skrd/contracts",
     "typecheck": "npm run build -w @skrd/contracts && npm run typecheck -w web && npm run build -w api",

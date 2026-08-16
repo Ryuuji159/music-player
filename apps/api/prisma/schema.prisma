@@ -31,7 +31,7 @@ model Venue {
   name      String
   createdAt DateTime @default(now())
 
-  users        User[]
+  users        User[]  @relation("UserVenues")
   queueItems   QueueItem[]
   songRequests SongRequest[]
   playlists    Playlist[]
@@ -41,13 +41,13 @@ model Venue {
 
 model User {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username     String   @unique
+  name         String
+  email        String   @unique
   passwordHash String
   role         UserRole @default(user)
-  venueId      String?  @db.Uuid
   createdAt    DateTime @default(now())
 
-  venue Venue? @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  venues Venue[] @relation("UserVenues")
 }
 
 model Session {

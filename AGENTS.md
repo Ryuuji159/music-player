@@ -45,9 +45,11 @@ npm run dev:web               # Web en dev (Vite)
 npm run dev:contracts         # recompila contracts en watch
 npm run build                 # build de contracts + api + web
 npm run typecheck             # contracts + typecheck web + build api
+npm run seed                  # crea el admin inicial (idempotente)
 ```
 
 - La API requiere `DATABASE_URL` (ver `apps/api/.env`) y `YOUTUBE_KEY` (API key de YouTube Data v3).
+- El admin inicial ya **no** se crea automáticamente al arrancar: se crea con `npm run seed` (lee `ADMIN_NAME`/`ADMIN_EMAIL`/`ADMIN_PASSWORD` y es idempotente). Reemplazó al antiguo `BootstrapService`.
 - El cliente Prisma está **gitignoreado** (`apps/api/src/prisma/generated/`). Tras clonar o tocar `schema.prisma`: `npx prisma generate` (dentro de `apps/api`). Migraciones: `npx prisma migrate deploy` / `migrate dev`.
 
 ## 5. Contratos (`packages/contracts`)
@@ -84,14 +86,16 @@ npm run typecheck             # contracts + typecheck web + build api
 
 | Método | Ruta | Acceso | Descripción |
 | ------ | ---- | ------ | ----------- |
-| POST | `/auth/login` | público | `{ username, password }` → sesión de staff |
+| POST | `/auth/login` | público | `{ email, password }` → sesión de staff |
 | POST | `/auth/logout` | sesión | cierra la sesión |
 | GET | `/auth/me` | sesión | `UserDto` actual |
 | GET | `/venues` | admin | lista venues |
-| POST | `/venues` | admin | crea venue `{ slug, name }` |
+| POST | `/venues` | admin | crea venue `{ name, slug? }` (slug auto desde nombre) |
+| PATCH | `/venues/:id` | admin | actualiza venue `{ name, slug? }` |
 | DELETE | `/venues/:id` | admin | elimina venue |
 | GET | `/users` | admin | lista usuarios |
-| POST | `/users` | admin | crea usuario `{ username, password, role, venueId? }` |
+| POST | `/users` | admin | crea usuario `{ name, email, password, role, venueIds }` |
+| PATCH | `/users/:id` | admin | actualiza usuario `{ name, email, password?, role, venueIds }` |
 | DELETE | `/users/:id` | admin | elimina usuario |
 | POST | `/join/:token` | público | valida invite → sesión de invitado (cookie) |
 | GET | `/venues/:slug/invite` | staff/admin | invite/QR actual (rota cada ~1 min) |
@@ -118,8 +122,8 @@ npm run typecheck             # contracts + typecheck web + build api
 
 ### Autenticación y multi-tenant
 
-- **Roles**: `admin` (global, `venueId = null`) gestiona venues/usuarios y opera cualquier venue; `user` pertenece a una venue.
-- **Sesión**: `express-session` con store propio respaldado en la tabla `Session` de Prisma. Cookie HTTP-only. `SESSION_SECRET` obligatorio; `CORS_ORIGIN` (dominio fijo), `ADMIN_USERNAME`/`ADMIN_PASSWORD` (seed de admin inicial).
+- **Roles**: `admin` (global) gestiona venues/usuarios y opera cualquier venue; `user` pertenece a una o varias venues (relación muchos-a-muchos `User.venues`).
+- **Sesión**: `express-session` con store propio respaldado en la tabla `Session` de Prisma. Cookie HTTP-only. `SESSION_SECRET` obligatorio; `CORS_ORIGIN` (dominio fijo), `ADMIN_NAME`/`ADMIN_EMAIL`/`ADMIN_PASSWORD` (seed de admin inicial).
 - **Guardas** (en `auth/guards/`): `SessionAuthGuard` (staff autenticado), `StaffGuard` (solo staff), `RolesGuard` + `@Roles('admin')`, `VenueAccessGuard` (resuelve venue por `:slug` y autoriza staff/invitado → fija `req.venueId`).
 - **Acceso de invitado (QR)**: `VenueInvite` rota cada ~1 min (`INVITE_TTL_MS`). `/join/:token` crea una sesión de invitado (`guestVenueId` en la session, TTL `GUEST_SESSION_TTL_MS` = 4 h por defecto). Los endpoints de cliente requieren sesión de invitado (o staff), no son abiertos.
 - Todo lo operativo está **scoped por venue**: los servicios reciben `venueId` y las queries filtran por él.
@@ -167,8 +171,11 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 
 | Ruta            | Archivo              | Rol                                                 |
 | --------------- | -------------------- | --------------------------------------------------- |
-| `/` (index)     | `routes/home.tsx`    | redirect a `/admin`                                 |
-| `/admin`        | `routes/admin.tsx`   | gestión de venues/usuarios (admin global)           |
+| `/` (index)     | `routes/home.tsx`    | redirect según rol (`/admin`, venue o `/select`)   |
+| `/admin`        | `routes/admin.tsx`   | layout admin con submenús (`/admin/venues`, `/admin/users`) |
+| `/admin/venues` | `routes/admin.venues.tsx` | gestión de venues (crear/editar/eliminar)    |
+| `/admin/users`  | `routes/admin.users.tsx`  | gestión de usuarios (crear/editar/eliminar)   |
+| `/select`       | `routes/select.tsx`  | elige venue (usuarios con varias venues)            |
 | `/join/:token`  | `routes/join.tsx`    | valida QR → sesión de invitado → `/:slug`           |
 | `/:slug`        | `routes/client.tsx`  | vista del cliente (invitado, solo lectura + añadir) |
 | `/:slug/control`| `routes/control.tsx` | panel de control (staff)                            |
@@ -184,6 +191,7 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 - `AddSongForm.tsx`: formulario de añadir (URL).
 - `AddPlaylist.tsx` + `PlaylistRow.tsx` + `PlaylistItems.tsx`: sección de playlists de backup (registro, expandir con `Collapsible`, búsqueda de canciones, añadir a cola, menú de acciones por playlist).
 - `MediaLibrary.tsx`: búsqueda de media registrada (biblioteca) con añadir a cola.
+- `VenueFormDialog.tsx` + `UserFormDialog.tsx`: diálogos de crear/editar venue y usuario (mismo componente para ambos modos, controlado por `onClose` y montado condicionalmente desde las rutas de admin).
 
 ### Data fetching (TanStack Query)
 

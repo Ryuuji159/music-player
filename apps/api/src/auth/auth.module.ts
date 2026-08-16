@@ -4,7 +4,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaSessionStore } from './prisma-session.store';
-import { BootstrapService } from './bootstrap.service';
 import { SessionAuthGuard } from './guards/session-auth.guard';
 import { StaffGuard } from './guards/staff.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -16,7 +15,6 @@ import { VenueAccessGuard } from './guards/venue-access.guard';
   providers: [
     AuthService,
     PrismaSessionStore,
-    BootstrapService,
     SessionAuthGuard,
     StaffGuard,
     RolesGuard,

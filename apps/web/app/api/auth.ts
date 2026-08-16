@@ -13,10 +13,10 @@ export const authAPI = {
       throw err;
     }
   },
-  login: (username: string, password: string): Promise<UserDto> => {
+  login: (email: string, password: string): Promise<UserDto> => {
     return request('/auth/login', userSchema, {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
   },
   logout: () => {

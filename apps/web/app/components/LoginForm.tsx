@@ -1,18 +1,13 @@
 import { useState, type SubmitEventHandler } from 'react';
 import { Button } from '~/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '~/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { Spinner } from '~/components/ui/spinner';
 import { toast } from '~/components/ui/toast';
 import { useLogin } from '~/hooks/useAuth';
 
 export const LoginForm = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
 
@@ -20,7 +15,7 @@ export const LoginForm = () => {
     e.preventDefault();
 
     try {
-      await login.mutateAsync({ username, password });
+      await login.mutateAsync({ email, password });
     } catch (err) {
       toast.add({
         type: 'error',
@@ -39,10 +34,11 @@ export const LoginForm = () => {
         <CardContent>
           <form onSubmit={submit} className="flex flex-col gap-3">
             <Input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Usuario"
-              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="Correo"
+              autoComplete="email"
             />
             <Input
               value={password}

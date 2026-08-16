@@ -1,14 +1,15 @@
 import z from 'zod';
+import { venueSchema } from './venue.schema';
 
 export const userRoleSchema = z.enum(['admin', 'user']);
 export type UserRole = z.infer<typeof userRoleSchema>;
 
 export const userSchema = z.object({
   id: z.uuid(),
-  username: z.string(),
+  name: z.string(),
+  email: z.string().email(),
   role: userRoleSchema,
-  venueId: z.uuid().nullable(),
-  venueSlug: z.string().nullable(),
+  venues: z.array(venueSchema),
 });
 export type UserDto = z.infer<typeof userSchema>;
 

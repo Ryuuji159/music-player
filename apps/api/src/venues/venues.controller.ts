@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -14,7 +15,9 @@ import { Roles } from '../auth/guards/roles.decorator';
 import { ZodValidationPipe } from '../zod-validation.pipe';
 import {
   createVenueSchema,
+  updateVenueSchema,
   type CreateVenueDto,
+  type UpdateVenueDto,
   type VenueDto,
 } from '@skrd/contracts';
 import z from 'zod';
@@ -35,6 +38,14 @@ export class VenuesController {
     @Body(new ZodValidationPipe(createVenueSchema)) dto: CreateVenueDto,
   ): Promise<VenueDto> {
     return this.venues.create(dto);
+  }
+
+  @Patch('/:id')
+  update(
+    @Param('id', new ZodValidationPipe(z.uuid())) id: string,
+    @Body(new ZodValidationPipe(updateVenueSchema)) dto: UpdateVenueDto,
+  ): Promise<VenueDto> {
+    return this.venues.update(id, dto);
   }
 
   @Delete('/:id')

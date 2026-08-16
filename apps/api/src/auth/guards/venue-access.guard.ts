@@ -27,13 +27,13 @@ export class VenueAccessGuard implements CanActivate {
     if (userId) {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        include: { venue: true },
+        include: { venues: true },
       });
       if (!user) throw new UnauthorizedException('Authentication required');
 
       req.user = user;
 
-      if (user.role === 'admin' || user.venueId === venue.id) {
+      if (user.role === 'admin' || user.venues.some((v) => v.id === venue.id)) {
         req.venueId = venue.id;
         return true;
       }

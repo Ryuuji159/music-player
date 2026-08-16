@@ -1,4 +1,4 @@
-import { ExternalLink, LogOut, Smartphone } from 'lucide-react';
+import { ExternalLink, LogOut, MapPin, Smartphone } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { useAuth, useLogout } from '~/hooks/useAuth';
 import { useVenueSlug } from '~/hooks/useVenueSlug';
@@ -28,7 +28,13 @@ export const ControlHeader = () => {
           <ExternalLink data-icon="inline-start" />
           Abrir reproductor
         </Button>
-        <span className="text-sm text-muted-foreground">{user?.username}</span>
+        {user && user.venues.length > 1 && (
+          <Button variant="outline" render={<a href="/select" />}>
+            <MapPin data-icon="inline-start" />
+            Cambiar de venue
+          </Button>
+        )}
+        <span className="text-sm text-muted-foreground">{user?.name}</span>
         <Button variant="ghost" onClick={() => logout.mutate()}>
           <LogOut data-icon="inline-start" />
           Salir

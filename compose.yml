@@ -28,7 +28,8 @@ services:
       PORT: '3000'
       SESSION_SECRET: ${SESSION_SECRET:-dev-session-secret-change-me}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@player.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
     ports:
       - '3000:3000'

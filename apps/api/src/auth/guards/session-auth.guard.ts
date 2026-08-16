@@ -19,7 +19,7 @@ export class SessionAuthGuard implements CanActivate {
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { venue: true },
+      include: { venues: true },
     });
     if (!user) throw new UnauthorizedException('Authentication required');
 

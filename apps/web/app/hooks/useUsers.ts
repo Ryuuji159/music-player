@@ -23,6 +23,19 @@ export function useCreateUser() {
   });
 }
 
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (args: {
+      id: string;
+      input: Parameters<typeof usersAPI.update>[1];
+    }) => usersAPI.update(args.id, args.input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    },
+  });
+}
+
 export function useRemoveUser() {
   const queryClient = useQueryClient();
   return useMutation({
