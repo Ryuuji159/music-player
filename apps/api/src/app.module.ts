@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { PlayerModule } from './player/player.module';
 import { PlaylistModule } from './playlist/playlist.module';
+import { RequestsModule } from './requests/requests.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PlaylistModule } from './playlist/playlist.module';
     PlayerModule,
     YoutubeModule,
     PlaylistModule,
+    RequestsModule,
   ],
 })
 export class AppModule {}

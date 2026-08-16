@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { PlayerCommandDto, QueueDto } from '@skrd/contracts';
+import type {
+  PlayerCommandDto,
+  QueueDto,
+  SongRequestListDto,
+} from '@skrd/contracts';
 import { Observable, Subject } from 'rxjs';
 
 export type RealtimeEvent =
@@ -10,6 +14,10 @@ export type RealtimeEvent =
   | {
       type: 'player.command';
       data: PlayerCommandDto;
+    }
+  | {
+      type: 'requests.updated';
+      data: SongRequestListDto;
     };
 
 @Injectable()

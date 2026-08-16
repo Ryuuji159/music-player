@@ -18,6 +18,7 @@ export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
   const onEndedRef = useRef(onEnded);
   const onErrorRef = useRef(onError);
   const pendingVideoIdRef = useRef<string | null>(null);
+  const currentVideoIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     onEndedRef.current = onEnded;
@@ -29,14 +30,21 @@ export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
 
   useImperativeHandle(ref, () => ({
     play(videoId) {
-      if (videoId) {
-        pendingVideoIdRef.current = videoId;
-        if (playerRef.current) {
-          playerRef.current.loadVideoById(videoId);
-          pendingVideoIdRef.current = null;
-        }
-      } else if (playerRef.current) {
-        playerRef.current.playVideo();
+      if (!videoId) {
+        playerRef.current?.playVideo();
+        return;
+      }
+
+      if (currentVideoIdRef.current === videoId) {
+        playerRef.current?.playVideo();
+        return;
+      }
+
+      currentVideoIdRef.current = videoId;
+      pendingVideoIdRef.current = videoId;
+      if (playerRef.current) {
+        playerRef.current.loadVideoById(videoId);
+        pendingVideoIdRef.current = null;
       }
     },
     pause() {

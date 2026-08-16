@@ -171,8 +171,9 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 ### Cliente HTTP / SSE
 
 - `api/http.ts`: `request<T>(path, schema, init)` → fetch, lanza `ApiError` en no-2xx, valida con el schema de Zod. **Tolera respuestas vacías** (los `@Post` de Nest devuelven 201 con body vacío).
-- `context/RealtimeProvider.tsx`: un solo `EventSource` a `/events`. **Ojo**: el `type` del evento está en `message.type` (nombre del evento), no en el body; hay que parsear `{ type: message.type, data: JSON.parse(message.data) }` con `realtimeEventSchema`. Además hace `queryClient.setQueryData(["queue"], data)` en cada `queue.updated` para mantener viva la caché.
-- `context/RealtimeContext.tsx`: expone `{ lastEvent, isConnected, error }` vía `useRealtime()` (lo usa la pantalla para reaccionar a `player.command`).
+- `context/RealtimeProvider.tsx`: un solo `EventSource` a `/events`, transporte puro pub/sub. **Ojo**: el `type` del evento está en `message.type` (nombre del evento), no en el body; hay que parsear `{ type: message.type, data: JSON.parse(message.data) }` con `realtimeEventSchema`. Distribuye cada evento a todos los suscriptores (un `Set` de handlers en un `ref`, sin estado por evento) y además se suscribe a sí mismo para hacer `queryClient.setQueryData` en `queue.updated`/`requests.updated`.
+- `context/RealtimeContext.tsx`: expone `{ subscribe, isConnected, error }` vía `useRealtime()`; `subscribe(handler)` devuelve una función de unsubscribe.
+- `context/useRealtimeEvent.ts`: hook `useRealtimeEvent(type, handler)` que se suscribe a un tipo de evento concreto (tipado por `type`) y usa un ref para mantener el `handler` al día sin re-suscribirse. Lo usa la pantalla para reaccionar a `player.command`. **No** modelar eventos como "último evento" en un estado: se pierden cuando llegan varios tipos seguidos (bug previo con `next`/`previous`).
 
 ### Sistema de diseño (UI)
 

@@ -1,8 +1,11 @@
 import type { RealtimeEvent } from '@skrd/contracts';
 import { createContext, useContext } from 'react';
 
+export type RealtimeEventHandler = (event: RealtimeEvent) => void;
+export type Unsubscribe = () => void;
+
 type RealtimeContextValue = {
-  lastEvent: RealtimeEvent | null;
+  subscribe: (handler: RealtimeEventHandler) => Unsubscribe;
   isConnected: boolean;
   error: string | null;
 };

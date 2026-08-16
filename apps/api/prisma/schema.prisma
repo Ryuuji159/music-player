@@ -14,6 +14,12 @@ enum QueueStatus {
   paused
 }
 
+enum SongRequestStatus {
+  pending
+  approved
+  rejected
+}
+
 model MediaItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -27,6 +33,7 @@ model MediaItem {
 
   queues        QueueItem[]
   playlistItems PlaylistItem[]
+  requests      SongRequest[]
 }
 
 model QueueItem {
@@ -35,6 +42,15 @@ model QueueItem {
   position Float
   status   QueueStatus @default(queued)
   mediaId  String      @db.Uuid
+
+  media MediaItem @relation(fields: [mediaId], references: [id])
+}
+
+model SongRequest {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mediaId   String            @db.Uuid
+  status    SongRequestStatus @default(pending)
+  createdAt DateTime          @default(now())
 
   media MediaItem @relation(fields: [mediaId], references: [id])
 }

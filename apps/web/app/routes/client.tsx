@@ -1,5 +1,6 @@
 import type { Route } from './+types/client';
-import { AddSongForm } from '~/components/AddSongForm';
+import { RequestSongForm } from '~/components/RequestSongForm';
+import { Requests } from '~/components/Requests';
 import { NowPlaying } from '~/components/NowPlaying';
 import { Queue } from '~/components/Queue';
 import { Card } from '~/components/ui/card';
@@ -17,13 +18,22 @@ export default function Client() {
             Pide tu canción
           </h1>
           <p className="text-sm text-muted-foreground">
-            Pega una URL de YouTube para añadirla a la cola
+            Pega una URL de YouTube para solicitar una canción
           </p>
         </header>
 
         <NowPlaying />
 
-        <AddSongForm />
+        <RequestSongForm />
+
+        <div className="mt-2">
+          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+            Tus solicitudes
+          </h2>
+          <Card className="overflow-hidden py-0">
+            <Requests />
+          </Card>
+        </div>
 
         <div className="mt-2">
           <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">

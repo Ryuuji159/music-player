@@ -34,6 +34,11 @@ export class QueueService {
     await this.emitQueueUpdated();
   }
 
+  async appendMedia(mediaId: string) {
+    await this.enqueue(mediaId);
+    await this.emitQueueUpdated();
+  }
+
   async move(queueItemId: string, moveQueueDTO: MoveQueueDto) {
     const { siblingId, placement } = moveQueueDTO;
 
