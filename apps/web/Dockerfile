@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# ---------- Dependencias de build ----------
+# ---------- Dependencias de build (completas) ----------
 FROM node:26-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -21,11 +21,10 @@ COPY --from=deps /app/node_modules ./node_modules
 RUN npm run build -w @skrd/contracts
 RUN npm run build -w web
 
-# ---------- Dependencias de producción ----------
+# ---------- Dependencias de producción (solo web + contracts) ----------
 FROM node:26-alpine AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/contracts/package.json ./packages/contracts/package.json
 RUN npm ci --omit=dev
