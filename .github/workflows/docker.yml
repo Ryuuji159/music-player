@@ -66,5 +66,5 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
           build-args: |
-            VITE_API_URL=${{ vars.VITE_API_URL }}
-            VITE_EVENTS_URL=${{ vars.VITE_EVENTS_URL }}
+            VITE_API_URL=${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+            VITE_EVENTS_URL=${{ vars.VITE_EVENTS_URL || secrets.VITE_EVENTS_URL }}
