@@ -9,7 +9,6 @@ import {
 
 import type { Route } from './+types/root';
 import './app.css';
-import { RealTimeProvider } from './context/RealtimeProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '~/components/ui/tooltip';
 import { Toaster } from '~/components/ui/toast';
@@ -39,11 +38,9 @@ const queryClient = new QueryClient();
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RealTimeProvider>
-        <TooltipProvider>
-          <Outlet />
-        </TooltipProvider>
-      </RealTimeProvider>
+      <TooltipProvider>
+        <Outlet />
+      </TooltipProvider>
       <Toaster />
     </QueryClientProvider>
   );

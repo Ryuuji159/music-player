@@ -18,11 +18,13 @@ import {
   useRejectRequest,
   useRequests,
 } from '~/hooks/useRequests';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 
 export const SongRequests = () => {
-  const { data: requests = [] } = useRequests();
-  const approveMutation = useApproveRequest();
-  const rejectMutation = useRejectRequest();
+  const slug = useVenueSlug();
+  const { data: requests = [] } = useRequests(slug);
+  const approveMutation = useApproveRequest(slug);
+  const rejectMutation = useRejectRequest(slug);
 
   return (
     <Card>
@@ -61,6 +63,11 @@ export const SongRequests = () => {
                   <p className="truncate text-xs text-muted-foreground">
                     {request.media.channelTitle}
                   </p>
+                  {request.requestedBy && (
+                    <p className="truncate text-xs text-muted-foreground">
+                      Pedida por {request.requestedBy}
+                    </p>
+                  )}
                 </div>
                 <Tooltip>
                   <TooltipTrigger

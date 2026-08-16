@@ -3,19 +3,23 @@ import { songRequestListSchema, type SongRequestDto } from '@skrd/contracts';
 import { request } from './http';
 
 export const requestsAPI = {
-  list: (): Promise<SongRequestDto[]> => {
-    return request('/requests', songRequestListSchema);
+  list: (slug: string): Promise<SongRequestDto[]> => {
+    return request(`/venues/${slug}/requests`, songRequestListSchema);
   },
-  create: (url: string) => {
-    return request('/requests', z.unknown(), {
+  create: (slug: string, url: string, requestedBy?: string) => {
+    return request(`/venues/${slug}/requests`, z.unknown(), {
       method: 'POST',
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, requestedBy }),
     });
   },
-  approve: (id: string) => {
-    return request(`/requests/${id}/approve`, z.unknown(), { method: 'POST' });
+  approve: (slug: string, id: string) => {
+    return request(`/venues/${slug}/requests/${id}/approve`, z.unknown(), {
+      method: 'POST',
+    });
   },
-  reject: (id: string) => {
-    return request(`/requests/${id}/reject`, z.unknown(), { method: 'POST' });
+  reject: (slug: string, id: string) => {
+    return request(`/venues/${slug}/requests/${id}/reject`, z.unknown(), {
+      method: 'POST',
+    });
   },
 };

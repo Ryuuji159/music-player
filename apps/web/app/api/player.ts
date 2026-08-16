@@ -2,28 +2,40 @@ import { z } from 'zod';
 import { request } from './http';
 
 export const playerAPI = {
-  next: () => {
-    return request('/player/next', z.unknown(), { method: 'POST' });
+  next: (slug: string) => {
+    return request(`/venues/${slug}/player/next`, z.unknown(), {
+      method: 'POST',
+    });
   },
-  previous: () => {
-    return request('/player/previous', z.unknown(), { method: 'POST' });
+  previous: (slug: string) => {
+    return request(`/venues/${slug}/player/previous`, z.unknown(), {
+      method: 'POST',
+    });
   },
-  play: () => {
-    return request('/player/play', z.unknown(), { method: 'POST' });
+  play: (slug: string) => {
+    return request(`/venues/${slug}/player/play`, z.unknown(), {
+      method: 'POST',
+    });
   },
-  pause: () => {
-    return request('/player/pause', z.unknown(), { method: 'POST' });
+  pause: (slug: string) => {
+    return request(`/venues/${slug}/player/pause`, z.unknown(), {
+      method: 'POST',
+    });
   },
-  ended: () => {
-    return request('/player/events/ended', z.unknown(), { method: 'POST' });
+  ended: (slug: string) => {
+    return request(`/venues/${slug}/player/events/ended`, z.unknown(), {
+      method: 'POST',
+    });
   },
-  error: (code: number) => {
-    return request('/player/events/error', z.unknown(), {
+  error: (slug: string, code: number) => {
+    return request(`/venues/${slug}/player/events/error`, z.unknown(), {
       method: 'POST',
       body: JSON.stringify({ code }),
     });
   },
-  playItem: (id: string) => {
-    return request(`/player/item/${id}/play`, z.unknown(), { method: 'POST' });
+  playItem: (slug: string, id: string) => {
+    return request(`/venues/${slug}/player/item/${id}/play`, z.unknown(), {
+      method: 'POST',
+    });
   },
 };

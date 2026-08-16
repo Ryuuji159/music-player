@@ -1,8 +1,10 @@
 import { useQueue } from '~/hooks/useQueue';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 import { Card, CardContent } from '~/components/ui/card';
 
 export const NowPlaying = () => {
-  const { data: queue = [] } = useQueue();
+  const slug = useVenueSlug();
+  const { data: queue = [] } = useQueue(slug);
   const current = queue.find(
     (i) => i.status === 'playing' || i.status === 'paused',
   );

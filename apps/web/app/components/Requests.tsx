@@ -8,9 +8,11 @@ import {
   EmptyTitle,
 } from '~/components/ui/empty';
 import { useRequests } from '~/hooks/useRequests';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 
 export const Requests = () => {
-  const { data: requests = [] } = useRequests();
+  const slug = useVenueSlug();
+  const { data: requests = [] } = useRequests(slug);
 
   if (requests.length === 0) {
     return (
@@ -49,6 +51,11 @@ export const Requests = () => {
             <p className="truncate text-sm text-muted-foreground">
               {request.media.channelTitle}
             </p>
+            {request.requestedBy && (
+              <p className="truncate text-xs text-muted-foreground">
+                Pedida por {request.requestedBy}
+              </p>
+            )}
           </div>
         </li>
       ))}

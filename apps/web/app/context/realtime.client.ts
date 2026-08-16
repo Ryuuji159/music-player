@@ -1,5 +1,5 @@
 import { env } from '~/config/env';
 
-export function createRealtimeClient() {
-  return new EventSource(`${env.eventsUrl}`);
+export function createRealtimeClient(slug: string) {
+  return new EventSource(`${env.eventsUrl}/${slug}`, { withCredentials: true });
 }

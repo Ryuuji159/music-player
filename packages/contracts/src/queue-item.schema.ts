@@ -5,6 +5,7 @@ export const queueItemSchema = z.object({
   id: z.uuid(),
   position: z.number(),
   status: z.enum(['queued', 'playing', 'paused']),
+  requestedBy: z.string().nullable(),
   media: mediaItemSchema,
 });
 

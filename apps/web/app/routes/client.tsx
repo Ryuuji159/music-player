@@ -1,4 +1,8 @@
 import type { Route } from './+types/client';
+import { RealTimeProvider } from '~/context/RealtimeProvider';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
+import { useQueue } from '~/hooks/useQueue';
+import { ApiError } from '~/api/http';
 import { RequestSongForm } from '~/components/RequestSongForm';
 import { Requests } from '~/components/Requests';
 import { NowPlaying } from '~/components/NowPlaying';
@@ -9,7 +13,30 @@ export function meta(_args: Route.MetaArgs) {
   return [{ title: 'Pide tu canción' }];
 }
 
-export default function Client() {
+function ScanQrPrompt() {
+  return (
+    <div className="flex min-h-screen w-screen items-center justify-center bg-background p-4 text-foreground">
+      <Card className="w-full max-w-md p-6 text-center">
+        <p className="font-heading text-lg font-medium">
+          Escanea el QR de la pantalla
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Para unirte a la sesión, escanea el código QR que se muestra en la
+          pantalla del bar.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+function ClientView() {
+  const slug = useVenueSlug();
+  const { error } = useQueue(slug);
+  const unauthorized =
+    error instanceof ApiError && error.details.statusCode === 401;
+
+  if (unauthorized) return <ScanQrPrompt />;
+
   return (
     <div className="min-h-screen w-screen bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 sm:p-6">
@@ -28,7 +55,7 @@ export default function Client() {
 
         <div className="mt-2">
           <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
-            Tus solicitudes
+            Solicitudes
           </h2>
           <Card className="overflow-hidden py-0">
             <Requests />
@@ -45,5 +72,15 @@ export default function Client() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Client() {
+  const slug = useVenueSlug();
+
+  return (
+    <RealTimeProvider slug={slug}>
+      <ClientView />
+    </RealTimeProvider>
   );
 }

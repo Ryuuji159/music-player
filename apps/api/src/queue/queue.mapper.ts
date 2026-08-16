@@ -14,7 +14,6 @@ export function toMediaDto(media: MediaItem): MediaItemDto {
     thumbnailUrl: media.thumbnailUrl,
     duration: durationToSeconds(media.duration),
     embeddable: media.embeddable,
-    playbackErrorCode: media.playbackErrorCode,
   };
 }
 
@@ -25,6 +24,7 @@ export function toQueueItemDto(
     id: item.id,
     position: item.position,
     status: item.status,
+    requestedBy: item.requestedBy,
     media: toMediaDto(item.media),
   };
 }

@@ -8,10 +8,12 @@ import {
   EmptyTitle,
 } from '~/components/ui/empty';
 import { useQueue } from '~/hooks/useQueue';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 import { cn } from '~/lib/utils';
 
 export const Queue = () => {
-  const { data: queue = [] } = useQueue();
+  const slug = useVenueSlug();
+  const { data: queue = [] } = useQueue(slug);
 
   if (queue.length === 0) {
     return (
@@ -65,6 +67,11 @@ export const Queue = () => {
                 <p className="truncate text-sm text-muted-foreground">
                   {item.media.channelTitle}
                 </p>
+                {item.requestedBy && (
+                  <p className="truncate text-xs text-muted-foreground">
+                    Pedida por {item.requestedBy}
+                  </p>
+                )}
               </div>
             </li>
           );

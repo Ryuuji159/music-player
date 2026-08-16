@@ -13,13 +13,14 @@ import { queueKeys } from '~/hooks/useQueue';
 import { requestKeys } from '~/hooks/useRequests';
 
 type Props = {
+  slug: string;
   children: ReactNode;
 };
 
 const RECONNECT_INITIAL_DELAY = 1_000;
 const RECONNECT_MAX_DELAY = 30_000;
 
-export const RealTimeProvider = ({ children }: Props) => {
+export const RealTimeProvider = ({ slug, children }: Props) => {
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export const RealTimeProvider = ({ children }: Props) => {
     const connect = () => {
       if (disposed) return;
 
-      const source = createRealtimeClient();
+      const source = createRealtimeClient(slug);
       eventSource = source;
 
       source.onopen = () => {
@@ -98,18 +99,18 @@ export const RealTimeProvider = ({ children }: Props) => {
       eventSource?.close();
       eventSource = null;
     };
-  }, []);
+  }, [slug]);
 
   useEffect(() => {
     return subscribe((event) => {
       if (event.type === 'queue.updated') {
-        queryClient.setQueryData(queueKeys.all, event.data);
+        queryClient.setQueryData(queueKeys.list(slug), event.data);
       }
       if (event.type === 'requests.updated') {
-        queryClient.setQueryData(requestKeys.all, event.data);
+        queryClient.setQueryData(requestKeys.list(slug), event.data);
       }
     });
-  }, [subscribe, queryClient]);
+  }, [subscribe, queryClient, slug]);
 
   return (
     <RealtimeContext.Provider value={{ subscribe, isConnected, error }}>

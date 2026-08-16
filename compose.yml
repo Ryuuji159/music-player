@@ -26,6 +26,10 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-player}:${POSTGRES_PASSWORD:-secret}@db:5432/${POSTGRES_DB:-player}?schema=public
       YOUTUBE_KEY: ${YOUTUBE_KEY:-}
       PORT: '3000'
+      SESSION_SECRET: ${SESSION_SECRET:-dev-session-secret-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
     ports:
       - '3000:3000'
     depends_on:

@@ -3,38 +3,42 @@ import { queueAPI } from '~/api/queue';
 
 export const queueKeys = {
   all: ['queue'] as const,
+  list: (slug: string) => ['queue', slug] as const,
 };
 
-export function useQueue() {
+export function useQueue(slug: string) {
   return useQuery({
-    queryKey: queueKeys.all,
-    queryFn: queueAPI.current,
+    queryKey: queueKeys.list(slug),
+    queryFn: () => queueAPI.current(slug),
     staleTime: Infinity,
+    retry: false,
   });
 }
 
-export function useAppendToQueue() {
-  return useMutation({ mutationFn: queueAPI.append });
+export function useAppendToQueue(slug: string) {
+  return useMutation({ mutationFn: (url: string) => queueAPI.append(slug, url) });
 }
 
-export function useAppendVideoToQueue() {
-  return useMutation({ mutationFn: queueAPI.appendVideo });
+export function useAppendVideoToQueue(slug: string) {
+  return useMutation({
+    mutationFn: (videoId: string) => queueAPI.appendVideo(slug, videoId),
+  });
 }
 
-export function useMoveQueueItem() {
+export function useMoveQueueItem(slug: string) {
   return useMutation({
     mutationFn: (args: {
       id: string;
       siblingId: string;
       placement: 'before' | 'after';
-    }) => queueAPI.move(args.id, args.siblingId, args.placement),
+    }) => queueAPI.move(slug, args.id, args.siblingId, args.placement),
   });
 }
 
-export function useRemoveQueueItem() {
-  return useMutation({ mutationFn: queueAPI.remove });
+export function useRemoveQueueItem(slug: string) {
+  return useMutation({ mutationFn: (id: string) => queueAPI.remove(slug, id) });
 }
 
-export function useClearQueue() {
-  return useMutation({ mutationFn: queueAPI.clear });
+export function useClearQueue(slug: string) {
+  return useMutation({ mutationFn: () => queueAPI.clear(slug) });
 }

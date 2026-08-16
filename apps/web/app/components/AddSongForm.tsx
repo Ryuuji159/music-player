@@ -4,10 +4,12 @@ import { Button } from '~/components/ui/button';
 import { Spinner } from '~/components/ui/spinner';
 import { toast } from '~/components/ui/toast';
 import { useAppendToQueue } from '~/hooks/useQueue';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 
 export const AddSongForm = () => {
+  const slug = useVenueSlug();
   const [url, setUrl] = useState('');
-  const appendMutation = useAppendToQueue();
+  const appendMutation = useAppendToQueue(slug);
 
   const submit: SubmitEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();

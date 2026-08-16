@@ -22,13 +22,22 @@ export type RealtimeEvent =
 
 @Injectable()
 export class EventsService {
-  private readonly events$ = new Subject<RealtimeEvent>();
+  private readonly channels = new Map<string, Subject<RealtimeEvent>>();
 
-  emit(event: RealtimeEvent) {
-    this.events$.next(event);
+  private channel(venueId: string): Subject<RealtimeEvent> {
+    let subject = this.channels.get(venueId);
+    if (!subject) {
+      subject = new Subject<RealtimeEvent>();
+      this.channels.set(venueId, subject);
+    }
+    return subject;
   }
 
-  events(): Observable<RealtimeEvent> {
-    return this.events$.asObservable();
+  emit(venueId: string, event: RealtimeEvent) {
+    this.channel(venueId).next(event);
+  }
+
+  events(venueId: string): Observable<RealtimeEvent> {
+    return this.channel(venueId).asObservable();
   }
 }

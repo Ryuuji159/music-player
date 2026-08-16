@@ -1,36 +1,58 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request } from 'express';
 import { RequestsService } from './requests.service';
 import { ZodValidationPipe } from '../zod-validation.pipe';
+import { VenueAccessGuard } from '../auth/guards/venue-access.guard';
+import { StaffGuard } from '../auth/guards/staff.guard';
 import {
   createSongRequestSchema,
   type CreateSongRequestDto,
 } from '@skrd/contracts';
 import z from 'zod';
 
-@Controller('/requests')
+@Controller('/venues/:slug/requests')
 export class RequestsController {
   constructor(private requests: RequestsService) {}
 
   @Get('/')
-  list() {
-    return this.requests.list();
+  @UseGuards(VenueAccessGuard)
+  list(@Req() req: Request) {
+    return this.requests.list(req.venueId!);
   }
 
   @Post('/')
+  @UseGuards(VenueAccessGuard)
   async create(
+    @Req() req: Request,
     @Body(new ZodValidationPipe(createSongRequestSchema))
     dto: CreateSongRequestDto,
   ) {
-    await this.requests.create(dto);
+    await this.requests.create(req.venueId!, dto);
   }
 
   @Post('/:id/approve')
-  async approve(@Param('id', new ZodValidationPipe(z.uuid())) id: string) {
-    await this.requests.approve(id);
+  @UseGuards(VenueAccessGuard, StaffGuard)
+  async approve(
+    @Req() req: Request,
+    @Param('id', new ZodValidationPipe(z.uuid())) id: string,
+  ) {
+    await this.requests.approve(req.venueId!, id);
   }
 
   @Post('/:id/reject')
-  async reject(@Param('id', new ZodValidationPipe(z.uuid())) id: string) {
-    await this.requests.reject(id);
+  @UseGuards(VenueAccessGuard, StaffGuard)
+  async reject(
+    @Req() req: Request,
+    @Param('id', new ZodValidationPipe(z.uuid())) id: string,
+  ) {
+    await this.requests.reject(req.venueId!, id);
   }
 }

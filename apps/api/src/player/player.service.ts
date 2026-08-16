@@ -16,71 +16,71 @@ export class PlayerService {
     private playlistService: PlaylistService,
   ) {}
 
-  async play() {
+  async play(venueId: string) {
     const playing = await this.prisma.queueItem.findFirst({
       select: { id: true },
-      where: { status: 'playing' },
+      where: { venueId, status: 'playing' },
     });
     if (playing) {
-      await this.emitPlayerCommand('play', playing.id);
+      await this.emitPlayerCommand(venueId, 'play', playing.id);
       return;
     }
 
     const paused = await this.prisma.queueItem.findFirst({
       select: { id: true },
-      where: { status: 'paused' },
+      where: { venueId, status: 'paused' },
     });
     if (paused) {
-      await this.clearPlaying();
+      await this.clearPlaying(venueId);
       await this.prisma.queueItem.update({
         where: { id: paused.id },
         data: { status: 'playing' },
       });
-      await this.emitPlayerCommand('play', paused.id);
-      await this.emitQueueUpdated();
+      await this.emitPlayerCommand(venueId, 'play', paused.id);
+      await this.emitQueueUpdated(venueId);
       return;
     }
 
     const first = await this.prisma.queueItem.findFirst({
       select: { id: true },
-      where: { media: notBlockedMediaFilter },
+      where: { venueId, media: notBlockedMediaFilter(venueId) },
       orderBy: { position: 'asc' },
     });
     if (!first) {
-      await this.playBackup();
+      await this.playBackup(venueId);
       return;
     }
 
-    await this.clearPlaying();
+    await this.clearPlaying(venueId);
     await this.prisma.queueItem.update({
       where: { id: first.id },
       data: { status: 'playing' },
     });
-    await this.emitPlayerCommand('play', first.id);
-    await this.emitQueueUpdated();
+    await this.emitPlayerCommand(venueId, 'play', first.id);
+    await this.emitQueueUpdated(venueId);
   }
 
-  async playItem(queueItemId: string) {
+  async playItem(venueId: string, queueItemId: string) {
     const item = await this.prisma.queueItem.findFirst({
       select: { id: true },
-      where: { id: queueItemId },
+      where: { id: queueItemId, venueId },
     });
     if (!item) return;
 
-    await this.clearPlaying();
+    await this.clearPlaying(venueId);
     await this.prisma.queueItem.update({
       where: { id: item.id },
       data: { status: 'playing' },
     });
 
-    await this.emitPlayerCommand('play', item.id);
-    await this.emitQueueUpdated();
+    await this.emitPlayerCommand(venueId, 'play', item.id);
+    await this.emitQueueUpdated(venueId);
   }
 
-  async pause() {
+  async pause(venueId: string) {
     const playing = await this.prisma.queueItem.findFirst({
       select: { id: true },
-      where: { status: 'playing' },
+      where: { venueId, status: 'playing' },
     });
     if (!playing) return;
 
@@ -89,37 +89,40 @@ export class PlayerService {
       data: { status: 'paused' },
     });
 
-    await this.emitPlayerCommand('pause', playing.id);
-    await this.emitQueueUpdated();
+    await this.emitPlayerCommand(venueId, 'pause', playing.id);
+    await this.emitQueueUpdated(venueId);
   }
 
-  async next() {
-    await this.advance(false);
+  async next(venueId: string) {
+    await this.advance(venueId, false);
   }
 
-  async ended() {
-    await this.advance(true);
+  async ended(venueId: string) {
+    await this.advance(venueId, true);
   }
 
-  async error(code: number) {
+  async error(venueId: string, code: number) {
     const current = await this.prisma.queueItem.findFirst({
-      select: { media: { select: { id: true } } },
-      where: { status: { in: ['playing', 'paused'] } },
+      select: { mediaId: true },
+      where: { venueId, status: { in: ['playing', 'paused'] } },
     });
     if (!current) return;
 
-    await this.prisma.mediaItem.update({
-      where: { id: current.media.id },
-      data: { playbackErrorCode: code },
+    await this.prisma.venueMediaError.upsert({
+      where: {
+        venueId_mediaId: { venueId, mediaId: current.mediaId },
+      },
+      create: { venueId, mediaId: current.mediaId, errorCode: code },
+      update: { errorCode: code },
     });
 
-    await this.advance(true);
+    await this.advance(venueId, true);
   }
 
-  async previous() {
+  async previous(venueId: string) {
     const current = await this.prisma.queueItem.findFirst({
       select: { id: true, position: true },
-      where: { status: { in: ['playing', 'paused'] } },
+      where: { venueId, status: { in: ['playing', 'paused'] } },
     });
 
     const currentPosition = current ? current.position : Infinity;
@@ -127,27 +130,28 @@ export class PlayerService {
     const prevItem = await this.prisma.queueItem.findFirst({
       select: { id: true },
       where: {
+        venueId,
         position: { lt: currentPosition },
-        media: notBlockedMediaFilter,
+        media: notBlockedMediaFilter(venueId),
       },
       orderBy: { position: 'desc' },
     });
     if (!prevItem) return;
 
-    await this.clearPlaying();
+    await this.clearPlaying(venueId);
     await this.prisma.queueItem.update({
       where: { id: prevItem.id },
       data: { status: 'playing' },
     });
 
-    await this.emitPlayerCommand('play', prevItem.id);
-    await this.emitQueueUpdated();
+    await this.emitPlayerCommand(venueId, 'play', prevItem.id);
+    await this.emitQueueUpdated(venueId);
   }
 
-  private async advance(requirePlaying: boolean) {
+  private async advance(venueId: string, requirePlaying: boolean) {
     const current = await this.prisma.queueItem.findFirst({
       select: { id: true, position: true },
-      where: { status: { in: ['playing', 'paused'] } },
+      where: { venueId, status: { in: ['playing', 'paused'] } },
     });
 
     if (requirePlaying && !current) return;
@@ -156,16 +160,17 @@ export class PlayerService {
     const nextItem = await this.prisma.queueItem.findFirst({
       select: { id: true },
       where: {
+        venueId,
         position: { gt: currentPosition },
-        media: notBlockedMediaFilter,
+        media: notBlockedMediaFilter(venueId),
       },
       orderBy: { position: 'asc' },
     });
 
-    await this.clearPlaying();
+    await this.clearPlaying(venueId);
 
     if (!nextItem) {
-      await this.playBackup();
+      await this.playBackup(venueId);
       return;
     }
 
@@ -174,18 +179,19 @@ export class PlayerService {
       data: { status: 'playing' },
     });
 
-    await this.emitPlayerCommand('play', nextItem.id);
-    await this.emitQueueUpdated();
+    await this.emitPlayerCommand(venueId, 'play', nextItem.id);
+    await this.emitQueueUpdated(venueId);
   }
 
-  private async clearPlaying() {
+  private async clearPlaying(venueId: string) {
     await this.prisma.queueItem.updateMany({
-      where: { status: { in: ['playing', 'paused'] } },
+      where: { venueId, status: { in: ['playing', 'paused'] } },
       data: { status: 'queued' },
     });
   }
 
   private async emitPlayerCommand(
+    venueId: string,
     action: CommandAction,
     itemId: string | null,
   ) {
@@ -193,41 +199,41 @@ export class PlayerService {
 
     if (itemId) {
       const item = await this.prisma.queueItem.findFirst({
-        where: { id: itemId },
+        where: { id: itemId, venueId },
         include: { media: { select: { videoId: true } } },
       });
       if (item) videoId = item.media.videoId;
     }
 
-    this.events.emit({
+    this.events.emit(venueId, {
       type: 'player.command',
       data: { action, videoId },
     });
   }
 
-  private async emitQueueUpdated() {
-    this.events.emit({
+  private async emitQueueUpdated(venueId: string) {
+    this.events.emit(venueId, {
       type: 'queue.updated',
-      data: await this.queueService.current(),
+      data: await this.queueService.current(venueId),
     });
   }
 
-  private async playBackup() {
-    const media = await this.playlistService.randomMedia();
+  private async playBackup(venueId: string) {
+    const media = await this.playlistService.randomMedia(venueId);
     if (!media) {
-      await this.emitPlayerCommand('stop', null);
-      await this.emitQueueUpdated();
+      await this.emitPlayerCommand(venueId, 'stop', null);
+      await this.emitQueueUpdated(venueId);
       return;
     }
 
-    const item = await this.queueService.enqueue(media.id);
-    await this.clearPlaying();
+    const item = await this.queueService.enqueue(venueId, media.id);
+    await this.clearPlaying(venueId);
     await this.prisma.queueItem.update({
       where: { id: item.id },
       data: { status: 'playing' },
     });
 
-    await this.emitPlayerCommand('play', item.id);
-    await this.emitQueueUpdated();
+    await this.emitPlayerCommand(venueId, 'play', item.id);
+    await this.emitQueueUpdated(venueId);
   }
 }

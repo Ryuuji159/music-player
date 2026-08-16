@@ -10,7 +10,7 @@ Sistema de reproducción de música para un bar:
 - **Pantalla(s)** muestran el video en reproducción + la cola (sin interacción).
 - **Panel de control** (staff) gestiona la cola: añadir, reordenar (drag & drop), eliminar, limpiar y reproducir/pausar/anterior/siguiente.
 
-Estado actual: **MVP**. No hay autenticación ni separación de permisos a nivel de API (la vista de cliente solo oculta controles por UI).
+Estado actual: **multi-tenant + autenticación**. Hay venues (bares) con cola separada, sesión de staff (`admin` global / `user` de venue) y acceso de cliente mediante **QR rotatorio** con sesión de invitado efímera. Ver `PLAN.md` para el diseño completo.
 
 ## 2. Estructura (monorepo npm workspaces)
 
@@ -82,35 +82,57 @@ npm run typecheck             # contracts + typecheck web + build api
 
 ### Endpoints
 
-| Método | Ruta                           | Descripción                                                |
-| ------ | ------------------------------ | ---------------------------------------------------------- |
-| GET    | `/queue`                       | cola actual ordenada por `position`                        |
-| POST   | `/queue/append`                | `{ url }` → resuelve y añade al final                      |
-| POST   | `/queue/append/video/:videoId` | añade a la cola por `videoId` (desde playlist/biblioteca)  |
-| POST   | `/queue/item/:id/move`         | `{ siblingId, placement: "before"\|"after" }` reordena     |
-| DELETE | `/queue/item/:id`              | elimina un item                                            |
-| DELETE | `/queue/clear`                 | vacía la cola                                              |
-| POST   | `/queue/push`                  | fuerza `queue.updated` (broadcast manual)                  |
-| GET    | `/media?q=`                    | busca media registrada (biblioteca)                        |
-| GET    | `/playlist`                    | lista playlists de backup                                  |
-| POST   | `/playlist`                    | `{ url }` → registra/refresca una playlist (importa items) |
-| GET    | `/playlist/:id`                | detalle de una playlist (con `items: MediaItemDto[]`)      |
-| DELETE | `/playlist/:id`                | elimina una playlist                                       |
-| POST   | `/player/play`                 | reproduce/resume (idempotente)                             |
-| POST   | `/player/pause`                | pausa                                                      |
-| POST   | `/player/next`                 | siguiente                                                  |
-| POST   | `/player/previous`             | anterior                                                   |
-| POST   | `/player/item/:id/play`        | reproduce un item concreto (selección en el panel)         |
-| POST   | `/player/events/ended`         | el front avisa que una canción terminó                     |
-| GET    | `/events`                      | SSE (realtime)                                             |
-| GET    | `/api`                         | Swagger UI                                                 |
+| Método | Ruta | Acceso | Descripción |
+| ------ | ---- | ------ | ----------- |
+| POST | `/auth/login` | público | `{ username, password }` → sesión de staff |
+| POST | `/auth/logout` | sesión | cierra la sesión |
+| GET | `/auth/me` | sesión | `UserDto` actual |
+| GET | `/venues` | admin | lista venues |
+| POST | `/venues` | admin | crea venue `{ slug, name }` |
+| DELETE | `/venues/:id` | admin | elimina venue |
+| GET | `/users` | admin | lista usuarios |
+| POST | `/users` | admin | crea usuario `{ username, password, role, venueId? }` |
+| DELETE | `/users/:id` | admin | elimina usuario |
+| POST | `/join/:token` | público | valida invite → sesión de invitado (cookie) |
+| GET | `/venues/:slug/invite` | staff/admin | invite/QR actual (rota cada ~1 min) |
+| POST | `/venues/:slug/invite/rotate` | staff/admin | fuerza rotación del QR |
+| GET | `/venues/:slug/queue` | invitado/staff | cola ordenada por `position` |
+| POST | `/venues/:slug/queue/append` | staff/admin | `{ url }` → añade al final |
+| POST | `/venues/:slug/queue/append/video/:videoId` | staff/admin | añade por `videoId` |
+| POST | `/venues/:slug/queue/item/:id/move` | staff/admin | `{ siblingId, placement }` reordena |
+| DELETE | `/venues/:slug/queue/item/:id` | staff/admin | elimina item |
+| DELETE | `/venues/:slug/queue/clear` | staff/admin | vacía cola |
+| POST | `/venues/:slug/queue/push` | staff/admin | fuerza `queue.updated` |
+| GET | `/venues/:slug/media?q=` | staff/admin | busca media registrada |
+| GET | `/venues/:slug/playlist` | staff/admin | lista playlists |
+| POST | `/venues/:slug/playlist` | staff/admin | registra/refresca playlist |
+| GET | `/venues/:slug/playlist/:id` | staff/admin | detalle playlist |
+| DELETE | `/venues/:slug/playlist/:id` | staff/admin | elimina playlist |
+| GET | `/venues/:slug/requests` | invitado/staff | solicitudes pendientes |
+| POST | `/venues/:slug/requests` | invitado | `{ url, requestedBy? }` |
+| POST | `/venues/:slug/requests/:id/approve` | staff/admin | aprueba y encola |
+| POST | `/venues/:slug/requests/:id/reject` | staff/admin | rechaza |
+| POST | `/venues/:slug/player/*` | staff/admin | play/pause/next/previous/ended/error/item/:id/play |
+| GET | `/events/:slug` | público | SSE (realtime por venue) |
+| GET | `/api` | público | Swagger UI |
+
+### Autenticación y multi-tenant
+
+- **Roles**: `admin` (global, `venueId = null`) gestiona venues/usuarios y opera cualquier venue; `user` pertenece a una venue.
+- **Sesión**: `express-session` con store propio respaldado en la tabla `Session` de Prisma. Cookie HTTP-only. `SESSION_SECRET` obligatorio; `CORS_ORIGIN` (dominio fijo), `ADMIN_USERNAME`/`ADMIN_PASSWORD` (seed de admin inicial).
+- **Guardas** (en `auth/guards/`): `SessionAuthGuard` (staff autenticado), `StaffGuard` (solo staff), `RolesGuard` + `@Roles('admin')`, `VenueAccessGuard` (resuelve venue por `:slug` y autoriza staff/invitado → fija `req.venueId`).
+- **Acceso de invitado (QR)**: `VenueInvite` rota cada ~1 min (`INVITE_TTL_MS`). `/join/:token` crea una sesión de invitado (`guestVenueId` en la session, TTL `GUEST_SESSION_TTL_MS` = 4 h por defecto). Los endpoints de cliente requieren sesión de invitado (o staff), no son abiertos.
+- Todo lo operativo está **scoped por venue**: los servicios reciben `venueId` y las queries filtran por él.
 
 ### Realtime (SSE)
 
-`GET /events` emite dos tipos de evento (el `type` es el **nombre del evento SSE**, no va dentro del `data`):
+`GET /events/:slug` emite por venue (el `type` es el **nombre del evento SSE**, no va dentro del `data`):
 
-- `queue.updated` → `data` = `QueueDto` (toda la cola).
+- `queue.updated` → `data` = `QueueDto` (toda la cola de la venue).
 - `player.command` → `data` = `PlayerCommandDto`.
+- `requests.updated` → `data` = `SongRequestListDto` (pendientes).
+
+`EventsService` mantiene un `Map<venueId, Subject>`; cada `emit(venueId, event)` va solo a los suscriptores de esa venue.
 
 ### Flujo de reproducción (unidireccional)
 
@@ -143,11 +165,14 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 
 ### Rutas
 
-| Ruta        | Archivo              | Rol                                                 |
-| ----------- | -------------------- | --------------------------------------------------- |
-| `/` (index) | `routes/client.tsx`  | vista del cliente (añadir + ver cola, solo lectura) |
-| `/control`  | `routes/control.tsx` | panel de control (staff)                            |
-| `/player`   | `routes/player.tsx`  | pantalla (video + cola, sin interacción)            |
+| Ruta            | Archivo              | Rol                                                 |
+| --------------- | -------------------- | --------------------------------------------------- |
+| `/` (index)     | `routes/home.tsx`    | redirect a `/admin`                                 |
+| `/admin`        | `routes/admin.tsx`   | gestión de venues/usuarios (admin global)           |
+| `/join/:token`  | `routes/join.tsx`    | valida QR → sesión de invitado → `/:slug`           |
+| `/:slug`        | `routes/client.tsx`  | vista del cliente (invitado, solo lectura + añadir) |
+| `/:slug/control`| `routes/control.tsx` | panel de control (staff)                            |
+| `/:slug/player` | `routes/player.tsx`  | pantalla (video + cola + QR, staff)                 |
 
 ### Componentes
 

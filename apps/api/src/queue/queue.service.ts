@@ -14,43 +14,41 @@ export class QueueService {
     private events: EventsService,
   ) {}
 
-  async current(): Promise<QueueItemDto[]> {
+  async current(venueId: string): Promise<QueueItemDto[]> {
     const items = await this.prisma.queueItem.findMany({
       orderBy: { position: 'asc' },
-      where: { media: notBlockedMediaFilter },
+      where: { venueId, media: notBlockedMediaFilter(venueId) },
       include: { media: true },
     });
 
     return items.map(toQueueItemDto);
   }
 
-  async append(appendToQueueDTO: AppendToQueueDto) {
-    const { videoId } = appendToQueueDTO;
-
-    const media = await this.mediaService.resolve(videoId);
+  async append(venueId: string, dto: AppendToQueueDto) {
+    const media = await this.mediaService.resolve(dto.videoId);
     if (!media) return null;
 
-    await this.enqueue(media.id);
-    await this.emitQueueUpdated();
+    await this.enqueue(venueId, media.id);
+    await this.emitQueueUpdated(venueId);
   }
 
-  async appendMedia(mediaId: string) {
-    await this.enqueue(mediaId);
-    await this.emitQueueUpdated();
+  async appendMedia(venueId: string, mediaId: string, requestedBy?: string | null) {
+    await this.enqueue(venueId, mediaId, requestedBy);
+    await this.emitQueueUpdated(venueId);
   }
 
-  async move(queueItemId: string, moveQueueDTO: MoveQueueDto) {
-    const { siblingId, placement } = moveQueueDTO;
+  async move(venueId: string, queueItemId: string, dto: MoveQueueDto) {
+    const { siblingId, placement } = dto;
 
     if (queueItemId === siblingId) {
-      return await this.prisma.queueItem.findUnique({
-        where: { id: queueItemId },
+      return await this.prisma.queueItem.findFirst({
+        where: { id: queueItemId, venueId },
       });
     }
 
     const sibling = await this.prisma.queueItem.findFirst({
       select: { position: true },
-      where: { id: siblingId },
+      where: { id: siblingId, venueId },
     });
 
     if (!sibling) {
@@ -58,37 +56,40 @@ export class QueueService {
     }
 
     const position = await this.getMovePosition(
+      venueId,
       queueItemId,
       sibling.position,
       placement,
     );
 
-    await this.prisma.queueItem.update({
-      where: { id: queueItemId },
-      data: { position: position },
-      include: { media: true },
+    await this.prisma.queueItem.updateMany({
+      where: { id: queueItemId, venueId },
+      data: { position },
     });
 
-    await this.emitQueueUpdated();
+    await this.emitQueueUpdated(venueId);
   }
 
-  async deleteItem(queueItemId: string) {
-    await this.prisma.queueItem.delete({ where: { id: queueItemId } });
-    await this.emitQueueUpdated();
+  async deleteItem(venueId: string, queueItemId: string) {
+    await this.prisma.queueItem.deleteMany({
+      where: { id: queueItemId, venueId },
+    });
+    await this.emitQueueUpdated(venueId);
   }
 
-  async clear() {
-    await this.prisma.queueItem.deleteMany();
-    await this.emitQueueUpdated();
+  async clear(venueId: string) {
+    await this.prisma.queueItem.deleteMany({ where: { venueId } });
+    await this.emitQueueUpdated(venueId);
   }
 
-  async push() {
-    await this.emitQueueUpdated();
+  async push(venueId: string) {
+    await this.emitQueueUpdated(venueId);
   }
 
-  async enqueue(mediaId: string) {
+  async enqueue(venueId: string, mediaId: string, requestedBy?: string | null) {
     const last = await this.prisma.queueItem.findFirst({
       select: { position: true },
+      where: { venueId },
       orderBy: { position: 'desc' },
     });
 
@@ -96,11 +97,14 @@ export class QueueService {
       data: {
         position: last ? last.position + 1000 : 1000,
         mediaId,
+        venueId,
+        requestedBy: requestedBy ?? null,
       },
     });
   }
 
   private async getMovePosition(
+    venueId: string,
     queueItemId: string,
     siblingPosition: number,
     placement: 'before' | 'after',
@@ -109,6 +113,7 @@ export class QueueService {
       const prev = await this.prisma.queueItem.findFirst({
         select: { position: true },
         where: {
+          venueId,
           id: { not: queueItemId },
           position: { lt: siblingPosition },
         },
@@ -123,6 +128,7 @@ export class QueueService {
     const next = await this.prisma.queueItem.findFirst({
       select: { position: true },
       where: {
+        venueId,
         id: { not: queueItemId },
         position: { gt: siblingPosition },
       },
@@ -134,10 +140,10 @@ export class QueueService {
       : siblingPosition + 1000;
   }
 
-  private async emitQueueUpdated() {
-    this.events.emit({
+  private async emitQueueUpdated(venueId: string) {
+    this.events.emit(venueId, {
       type: 'queue.updated',
-      data: await this.current(),
+      data: await this.current(venueId),
     });
   }
 

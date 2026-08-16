@@ -34,6 +34,7 @@ import {
   useRemoveQueueItem,
 } from '~/hooks/useQueue';
 import { usePlayerActions } from '~/hooks/usePlayer';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 import { cn } from '~/lib/utils';
 import { NowPlaying } from './NowPlaying';
 
@@ -76,6 +77,11 @@ function SortableRow({
         <p className="truncate text-sm text-muted-foreground">
           {item.media.channelTitle}
         </p>
+        {item.requestedBy && (
+          <p className="truncate text-xs text-muted-foreground">
+            Pedida por {item.requestedBy}
+          </p>
+        )}
       </div>
       <div className="col-span-1 flex items-center justify-center">
         <Tooltip>
@@ -124,12 +130,13 @@ function SortableRow({
 }
 
 export const QueueManager = () => {
-  const { data: queue = [] } = useQueue();
+  const slug = useVenueSlug();
+  const { data: queue = [] } = useQueue(slug);
   const queryClient = useQueryClient();
-  const moveMutation = useMoveQueueItem();
-  const removeMutation = useRemoveQueueItem();
-  const clearMutation = useClearQueue();
-  const { play, pause, next, previous, playItem } = usePlayerActions();
+  const moveMutation = useMoveQueueItem(slug);
+  const removeMutation = useRemoveQueueItem(slug);
+  const clearMutation = useClearQueue(slug);
+  const { play, pause, next, previous, playItem } = usePlayerActions(slug);
 
   const listRef = useRef<HTMLUListElement>(null);
   const currentId = queue.find(

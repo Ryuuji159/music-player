@@ -19,8 +19,9 @@ export class PlaylistService {
     private mediaService: MediaService,
   ) {}
 
-  async list() {
+  async list(venueId: string) {
     const playlists = await this.prisma.playlist.findMany({
+      where: { venueId },
       orderBy: { createdAt: 'asc' },
       include: {
         items: { take: 1, include: { media: true } },
@@ -30,12 +31,12 @@ export class PlaylistService {
     return playlists.map((p) => toPlaylistDto(p));
   }
 
-  async get(id: string) {
-    const playlist = await this.prisma.playlist.findUnique({
-      where: { id },
+  async get(venueId: string, id: string) {
+    const playlist = await this.prisma.playlist.findFirst({
+      where: { id, venueId },
       include: {
         items: {
-          where: { media: notBlockedMediaFilter },
+          where: { media: notBlockedMediaFilter(venueId) },
           orderBy: { position: 'asc' },
           include: { media: true },
         },
@@ -49,8 +50,8 @@ export class PlaylistService {
     return toPlaylistDetailDto(playlist);
   }
 
-  async register(playlistId: PlaylistId) {
-    this.logger.log(`Registering playlist ${playlistId}`);
+  async register(venueId: string, playlistId: PlaylistId) {
+    this.logger.log(`Registering playlist ${playlistId} for venue ${venueId}`);
 
     const info = await this.youtube.getPlaylistInfo(playlistId);
     this.logger.log(`Playlist info: ${info?.title ?? '(no title)'}`);
@@ -82,13 +83,16 @@ export class PlaylistService {
     }
 
     const playlist = await this.prisma.playlist.upsert({
-      where: { playlistId },
+      where: {
+        venueId_playlistId: { venueId, playlistId },
+      },
       update: {
         title: info?.title ?? 'Playlist',
         thumbnailUrl: info?.thumbnailUrl,
       },
       create: {
         playlistId,
+        venueId,
         title: info?.title ?? 'Playlist',
         thumbnailUrl: info?.thumbnailUrl,
       },
@@ -108,18 +112,29 @@ export class PlaylistService {
     return playlist;
   }
 
-  async remove(id: string) {
+  async remove(venueId: string, id: string) {
+    const playlist = await this.prisma.playlist.findFirst({
+      where: { id, venueId },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+
     await this.prisma.playlist.delete({ where: { id } });
   }
 
-  async randomMedia() {
+  async randomMedia(venueId: string) {
     const count = await this.prisma.playlistItem.count({
-      where: { media: notBlockedMediaFilter },
+      where: {
+        playlist: { venueId },
+        media: notBlockedMediaFilter(venueId),
+      },
     });
     if (!count) return null;
 
     const item = await this.prisma.playlistItem.findFirst({
-      where: { media: notBlockedMediaFilter },
+      where: {
+        playlist: { venueId },
+        media: notBlockedMediaFilter(venueId),
+      },
       skip: Math.floor(Math.random() * count),
       include: { media: true },
     });

@@ -6,6 +6,10 @@ import { YoutubeModule } from './youtube/youtube.module';
 import { PlayerModule } from './player/player.module';
 import { PlaylistModule } from './playlist/playlist.module';
 import { RequestsModule } from './requests/requests.module';
+import { AuthModule } from './auth/auth.module';
+import { VenuesModule } from './venues/venues.module';
+import { UsersModule } from './users/users.module';
+import { InviteModule } from './invite/invite.module';
 
 @Module({
   imports: [
@@ -16,6 +20,10 @@ import { RequestsModule } from './requests/requests.module';
     YoutubeModule,
     PlaylistModule,
     RequestsModule,
+    AuthModule,
+    VenuesModule,
+    UsersModule,
+    InviteModule,
   ],
 })
 export class AppModule {}

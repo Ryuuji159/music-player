@@ -2,7 +2,10 @@ import { mediaListSchema, type MediaItemDto } from '@skrd/contracts';
 import { request } from './http';
 
 export const mediaAPI = {
-  search: (q: string): Promise<MediaItemDto[]> => {
-    return request(`/media?q=${encodeURIComponent(q)}`, mediaListSchema);
+  search: (slug: string, q: string): Promise<MediaItemDto[]> => {
+    return request(
+      `/venues/${slug}/media?q=${encodeURIComponent(q)}`,
+      mediaListSchema,
+    );
   },
 };

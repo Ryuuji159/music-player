@@ -3,24 +3,29 @@ import { requestsAPI } from '~/api/requests';
 
 export const requestKeys = {
   all: ['requests'] as const,
+  list: (slug: string) => ['requests', slug] as const,
 };
 
-export function useRequests() {
+export function useRequests(slug: string) {
   return useQuery({
-    queryKey: requestKeys.all,
-    queryFn: requestsAPI.list,
+    queryKey: requestKeys.list(slug),
+    queryFn: () => requestsAPI.list(slug),
     staleTime: Infinity,
+    retry: false,
   });
 }
 
-export function useCreateRequest() {
-  return useMutation({ mutationFn: requestsAPI.create });
+export function useCreateRequest(slug: string) {
+  return useMutation({
+    mutationFn: (args: { url: string; requestedBy?: string }) =>
+      requestsAPI.create(slug, args.url, args.requestedBy),
+  });
 }
 
-export function useApproveRequest() {
-  return useMutation({ mutationFn: requestsAPI.approve });
+export function useApproveRequest(slug: string) {
+  return useMutation({ mutationFn: (id: string) => requestsAPI.approve(slug, id) });
 }
 
-export function useRejectRequest() {
-  return useMutation({ mutationFn: requestsAPI.reject });
+export function useRejectRequest(slug: string) {
+  return useMutation({ mutationFn: (id: string) => requestsAPI.reject(slug, id) });
 }

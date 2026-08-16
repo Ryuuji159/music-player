@@ -20,6 +20,65 @@ enum SongRequestStatus {
   rejected
 }
 
+enum UserRole {
+  admin
+  user
+}
+
+model Venue {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  users        User[]
+  queueItems   QueueItem[]
+  songRequests SongRequest[]
+  playlists    Playlist[]
+  mediaErrors  VenueMediaError[]
+  invites      VenueInvite[]
+}
+
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username     String   @unique
+  passwordHash String
+  role         UserRole @default(user)
+  venueId      String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  venue Venue? @relation(fields: [venueId], references: [id], onDelete: SetNull)
+}
+
+model Session {
+  sid       String   @id
+  data      Json
+  expiresAt DateTime
+}
+
+model VenueInvite {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  venueId   String   @db.Uuid
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+}
+
+model VenueMediaError {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  venueId   String   @db.Uuid
+  mediaId   String   @db.Uuid
+  errorCode Int
+  createdAt DateTime @default(now())
+
+  venue Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  media MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([venueId, mediaId])
+}
+
 model MediaItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -29,39 +88,50 @@ model MediaItem {
   thumbnailUrl String
   duration     String
   embeddable   Boolean
-  playbackErrorCode Int?
 
   queues        QueueItem[]
   playlistItems PlaylistItem[]
   requests      SongRequest[]
+  mediaErrors   VenueMediaError[]
 }
 
 model QueueItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  position Float
-  status   QueueStatus @default(queued)
-  mediaId  String      @db.Uuid
+  position    Float
+  status      QueueStatus @default(queued)
+  mediaId     String      @db.Uuid
+  venueId     String      @db.Uuid
+  requestedBy String?
 
   media MediaItem @relation(fields: [mediaId], references: [id])
+  venue Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
 }
 
 model SongRequest {
-  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  mediaId   String            @db.Uuid
-  status    SongRequestStatus @default(pending)
-  createdAt DateTime          @default(now())
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mediaId     String            @db.Uuid
+  venueId     String            @db.Uuid
+  status      SongRequestStatus @default(pending)
+  requestedBy String?
+  createdAt   DateTime          @default(now())
 
   media MediaItem @relation(fields: [mediaId], references: [id])
+  venue Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
 }
 
 model Playlist {
-  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  playlistId   String         @unique
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playlistId   String
+  venueId      String   @db.Uuid
   title        String
   thumbnailUrl String?
-  createdAt    DateTime       @default(now())
-  items        PlaylistItem[]
+  createdAt    DateTime @default(now())
+
+  venue Venue         @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  items PlaylistItem[]
+
+  @@unique([venueId, playlistId])
 }
 
 model PlaylistItem {
@@ -74,4 +144,3 @@ model PlaylistItem {
 
   @@unique([playlistId, mediaId])
 }
-

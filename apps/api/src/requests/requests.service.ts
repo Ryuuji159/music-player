@@ -15,9 +15,9 @@ export class RequestsService {
     private events: EventsService,
   ) {}
 
-  async list(): Promise<SongRequestListDto> {
+  async list(venueId: string): Promise<SongRequestListDto> {
     const requests = await this.prisma.songRequest.findMany({
-      where: { status: 'pending' },
+      where: { venueId, status: 'pending' },
       orderBy: { createdAt: 'asc' },
       include: { media: true },
     });
@@ -25,20 +25,24 @@ export class RequestsService {
     return requests.map(toSongRequestDto);
   }
 
-  async create(dto: CreateSongRequestDto) {
+  async create(venueId: string, dto: CreateSongRequestDto) {
     const media = await this.mediaService.resolve(dto.videoId);
     if (!media) return null;
 
     await this.prisma.songRequest.create({
-      data: { mediaId: media.id },
+      data: {
+        mediaId: media.id,
+        venueId,
+        requestedBy: dto.requestedBy,
+      },
     });
 
-    await this.emitRequestsUpdated();
+    await this.emitRequestsUpdated(venueId);
   }
 
-  async approve(id: string) {
-    const request = await this.prisma.songRequest.findUnique({
-      where: { id },
+  async approve(venueId: string, id: string) {
+    const request = await this.prisma.songRequest.findFirst({
+      where: { id, venueId },
       include: { media: true },
     });
     if (!request) throw new NotFoundException('Request not found');
@@ -49,13 +53,17 @@ export class RequestsService {
       data: { status: 'approved' },
     });
 
-    await this.queueService.appendMedia(request.media.id);
-    await this.emitRequestsUpdated();
+    await this.queueService.appendMedia(
+      venueId,
+      request.media.id,
+      request.requestedBy,
+    );
+    await this.emitRequestsUpdated(venueId);
   }
 
-  async reject(id: string) {
-    const request = await this.prisma.songRequest.findUnique({
-      where: { id },
+  async reject(venueId: string, id: string) {
+    const request = await this.prisma.songRequest.findFirst({
+      where: { id, venueId },
     });
     if (!request) throw new NotFoundException('Request not found');
     if (request.status !== 'pending') return;
@@ -65,13 +73,13 @@ export class RequestsService {
       data: { status: 'rejected' },
     });
 
-    await this.emitRequestsUpdated();
+    await this.emitRequestsUpdated(venueId);
   }
 
-  private async emitRequestsUpdated() {
-    this.events.emit({
+  private async emitRequestsUpdated(venueId: string) {
+    this.events.emit(venueId, {
       type: 'requests.updated',
-      data: await this.list(),
+      data: await this.list(venueId),
     });
   }
 }

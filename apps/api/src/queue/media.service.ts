@@ -72,14 +72,14 @@ export class MediaService {
       .filter((m): m is MediaItem => m !== undefined);
   }
 
-  async search(q?: string): Promise<MediaItemDto[]> {
+  async search(q: string | undefined, venueId: string): Promise<MediaItemDto[]> {
     const query = q?.trim();
 
     const items = await this.prisma.mediaItem.findMany({
       where: query
         ? {
             AND: [
-              notBlockedMediaFilter,
+              notBlockedMediaFilter(venueId),
               {
                 OR: [
                   { title: { contains: query, mode: 'insensitive' } },
@@ -88,7 +88,7 @@ export class MediaService {
               },
             ],
           }
-        : notBlockedMediaFilter,
+        : notBlockedMediaFilter(venueId),
       orderBy: { title: 'asc' },
       take: 100,
     });

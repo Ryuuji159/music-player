@@ -16,13 +16,15 @@ import {
 } from '~/components/ui/tooltip';
 import { useAppendVideoToQueue } from '~/hooks/useQueue';
 import { usePlaylist } from '~/hooks/usePlaylists';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 
 export const PlaylistItems = ({ playlistId }: { playlistId: string }) => {
+  const slug = useVenueSlug();
   const [search, setSearch] = useState('');
   const [addedId, setAddedId] = useState<string | null>(null);
 
-  const detailQuery = usePlaylist(playlistId);
-  const appendMutation = useAppendVideoToQueue();
+  const detailQuery = usePlaylist(slug, playlistId);
+  const appendMutation = useAppendVideoToQueue(slug);
 
   const detail = detailQuery.data;
   const searchQuery = search.trim().toLowerCase();

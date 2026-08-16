@@ -6,14 +6,16 @@ import { Input } from '~/components/ui/input';
 import { Spinner } from '~/components/ui/spinner';
 import { toast } from '~/components/ui/toast';
 import { usePlaylists, useRegisterPlaylist } from '~/hooks/usePlaylists';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 import { PlaylistRow } from './PlaylistRow';
 
 export const AddPlaylist = () => {
+  const slug = useVenueSlug();
   const [url, setUrl] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const playlistsQuery = usePlaylists();
-  const registerMutation = useRegisterPlaylist();
+  const playlistsQuery = usePlaylists(slug);
+  const registerMutation = useRegisterPlaylist(slug);
 
   const playlists = playlistsQuery.data ?? [];
 

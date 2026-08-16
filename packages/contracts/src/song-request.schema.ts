@@ -11,6 +11,7 @@ export type SongRequestStatus = z.infer<typeof songRequestStatusSchema>;
 export const songRequestSchema = z.object({
   id: z.uuid(),
   status: songRequestStatusSchema,
+  requestedBy: z.string().nullable(),
   createdAt: z.string(),
   media: mediaItemSchema,
 });

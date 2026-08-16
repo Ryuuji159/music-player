@@ -4,9 +4,12 @@ export function isBlockedCode(code: number | null): boolean {
   return code !== null && BLOCKED_PLAYBACK_CODES.includes(code);
 }
 
-export const notBlockedMediaFilter = {
-  OR: [
-    { playbackErrorCode: null },
-    { playbackErrorCode: { notIn: BLOCKED_PLAYBACK_CODES } },
-  ],
-};
+export function notBlockedMediaFilter(venueId: string) {
+  return {
+    NOT: {
+      mediaErrors: {
+        some: { venueId, errorCode: { in: BLOCKED_PLAYBACK_CODES } },
+      },
+    },
+  };
+}

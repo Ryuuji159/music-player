@@ -1,7 +1,10 @@
 import { type RouteConfig, index, route } from '@react-router/dev/routes';
 
 export default [
-  index('./routes/client.tsx'),
-  route('/control', './routes/control.tsx'),
-  route('/player', './routes/player.tsx'),
+  index('./routes/home.tsx'),
+  route('/admin', './routes/admin.tsx'),
+  route('/join/:token', './routes/join.tsx'),
+  route('/:slug', './routes/client.tsx'),
+  route('/:slug/control', './routes/control.tsx'),
+  route('/:slug/player', './routes/player.tsx'),
 ] satisfies RouteConfig;

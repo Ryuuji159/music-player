@@ -22,6 +22,7 @@ import {
 } from '~/components/ui/dropdown-menu';
 import { toast } from '~/components/ui/toast';
 import { useRemovePlaylist } from '~/hooks/usePlaylists';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 import { PlaylistItems } from './PlaylistItems';
 
 type Props = {
@@ -31,7 +32,8 @@ type Props = {
 };
 
 export const PlaylistRow = ({ playlist, isExpanded, onToggle }: Props) => {
-  const removeMutation = useRemovePlaylist();
+  const slug = useVenueSlug();
+  const removeMutation = useRemovePlaylist(slug);
 
   const remove = async () => {
     try {

@@ -6,9 +6,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { MediaService } from './media.service';
 import { MediaController } from './media.controller';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, YoutubeModule, RealtimeModule],
+  imports: [PrismaModule, YoutubeModule, RealtimeModule, AuthModule],
   controllers: [QueueController, MediaController],
   providers: [QueueService, MediaService],
   exports: [QueueService, MediaService],

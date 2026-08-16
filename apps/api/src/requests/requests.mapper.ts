@@ -8,6 +8,7 @@ export function toSongRequestDto(
   return {
     id: request.id,
     status: request.status,
+    requestedBy: request.requestedBy,
     createdAt: request.createdAt.toISOString(),
     media: toMediaDto(request.media),
   };

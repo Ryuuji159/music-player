@@ -8,19 +8,21 @@ import {
 import { request } from './http';
 
 export const playlistAPI = {
-  list: (): Promise<PlaylistDto[]> => {
-    return request('/playlist', playlistListSchema);
+  list: (slug: string): Promise<PlaylistDto[]> => {
+    return request(`/venues/${slug}/playlist`, playlistListSchema);
   },
-  get: (id: string): Promise<PlaylistDetailDto> => {
-    return request(`/playlist/${id}`, playlistDetailSchema);
+  get: (slug: string, id: string): Promise<PlaylistDetailDto> => {
+    return request(`/venues/${slug}/playlist/${id}`, playlistDetailSchema);
   },
-  register: (url: string) => {
-    return request('/playlist', z.unknown(), {
+  register: (slug: string, url: string) => {
+    return request(`/venues/${slug}/playlist`, z.unknown(), {
       method: 'POST',
       body: JSON.stringify({ url }),
     });
   },
-  remove: (id: string) => {
-    return request(`/playlist/${id}`, z.unknown(), { method: 'DELETE' });
+  remove: (slug: string, id: string) => {
+    return request(`/venues/${slug}/playlist/${id}`, z.unknown(), {
+      method: 'DELETE',
+    });
   },
 };

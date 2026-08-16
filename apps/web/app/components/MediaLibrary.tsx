@@ -18,19 +18,21 @@ import {
 } from '~/components/ui/tooltip';
 import { useMediaSearch } from '~/hooks/useMedia';
 import { useAppendVideoToQueue } from '~/hooks/useQueue';
+import { useVenueSlug } from '~/hooks/useVenueSlug';
 
 export const MediaLibrary = () => {
+  const slug = useVenueSlug();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [addedId, setAddedId] = useState<string | null>(null);
-  const appendMutation = useAppendVideoToQueue();
+  const appendMutation = useAppendVideoToQueue(slug);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 250);
     return () => clearTimeout(timer);
   }, [query]);
 
-  const searchQuery = useMediaSearch(debouncedQuery);
+  const searchQuery = useMediaSearch(slug, debouncedQuery);
   const results = searchQuery.data ?? [];
 
   const addToQueue = async (videoId: string) => {
