@@ -1,40 +1,25 @@
 import { useEffect, useState } from "react";
 import { Check, Library, Loader2, Plus, Search } from "lucide-react";
-import { mediaAPI } from "~/api/media";
-import { queueAPI } from "~/api/queue";
-import type { MediaItemDto } from "@skrd/contracts";
+import { useMediaSearch } from "~/hooks/useMedia";
+import { useAppendVideoToQueue } from "~/hooks/useQueue";
 
 export const MediaLibrary = () => {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<MediaItemDto[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [addedId, setAddedId] = useState<string | null>(null);
+  const appendMutation = useAppendVideoToQueue();
 
   useEffect(() => {
-    const q = query.trim();
-    if (!q) {
-      setResults([]);
-      return;
-    }
-
-    setLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        setResults(await mediaAPI.search(q));
-      } catch (err) {
-        console.error(err);
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 250);
     return () => clearTimeout(timer);
   }, [query]);
 
+  const searchQuery = useMediaSearch(debouncedQuery);
+  const results = searchQuery.data ?? [];
+
   const addToQueue = async (videoId: string) => {
     try {
-      await queueAPI.appendVideo(videoId);
+      await appendMutation.mutateAsync(videoId);
       setAddedId(videoId);
       setTimeout(() => setAddedId((cur) => (cur === videoId ? null : cur)), 1500);
     } catch (err) {
@@ -59,14 +44,14 @@ export const MediaLibrary = () => {
         />
       </div>
 
-      {loading && (
+      {searchQuery.isFetching && (
         <p className="flex items-center gap-2 text-sm text-ink-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Buscando…
         </p>
       )}
 
-      {!loading && query.trim() && results.length === 0 && (
+      {!searchQuery.isFetching && debouncedQuery.length > 0 && results.length === 0 && (
         <p className="text-sm text-ink-muted">Sin resultados</p>
       )}
 

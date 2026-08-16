@@ -1,7 +1,7 @@
 import { useQueue } from "~/hooks/useQueue"
 
 export const NowPlaying = () => {
-    const [queue] = useQueue();
+    const { data: queue = [] } = useQueue();
     const current = queue.find((i) => i.status === "playing" || i.status === "paused");
 
     if (!current) return null;

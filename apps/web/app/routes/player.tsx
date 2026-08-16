@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Route } from "./+types/player";
 import { YoutubePlayer, type PlayerAction } from "~/components/YoutubePlayer";
 import { useRealtime } from "~/context/RealtimeContext";
-import { playerAPI } from "~/api/player";
+import { usePlayerActions } from "~/hooks/usePlayer";
 import { PlayerQueue } from "~/components/PlayerQueue";
 
 export function meta({ }: Route.MetaArgs) {
@@ -12,9 +12,10 @@ export function meta({ }: Route.MetaArgs) {
 export default function Player() {
     const playerActionRef = useRef<PlayerAction>(null);
     const { lastEvent } = useRealtime();
+    const { play, ended } = usePlayerActions();
 
     useEffect(() => {
-        playerAPI.play().catch(console.error);
+        play.mutate();
     }, [])
 
     useEffect(() => {
@@ -34,7 +35,7 @@ export default function Player() {
                 <div className="col-span-9">
                     <YoutubePlayer
                         ref={playerActionRef}
-                        onEnded={() => playerAPI.ended().catch(console.error)}
+                        onEnded={() => ended.mutate()}
                     />
                 </div>
                 <div className="col-span-3 flex min-h-0 flex-col gap-2 m-2">

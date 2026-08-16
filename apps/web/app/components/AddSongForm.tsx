@@ -1,16 +1,17 @@
 import { useState, type SubmitEventHandler } from "react"
-import { queueAPI } from "~/api/queue";
+import { useAppendToQueue } from "~/hooks/useQueue";
 
 export const AddSongForm = () => {
     const [url, setUrl] = useState("");
     const [status, setStatus] = useState<{ type: "success" | "error", message: string } | null>(null);
+    const appendMutation = useAppendToQueue();
 
     const submit: SubmitEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
         setStatus(null);
 
         try {
-            await queueAPI.append(url);
+            await appendMutation.mutateAsync(url);
             setUrl("");
             setStatus({ type: "success", message: "Canción añadida a la cola" });
         } catch (err) {

@@ -3,7 +3,7 @@ import { Maximize, Minimize } from "lucide-react";
 import { useQueue } from "~/hooks/useQueue";
 
 export const PlayerQueue = () => {
-    const [queue] = useQueue();
+    const { data: queue = [] } = useQueue();
     const listRef = useRef<HTMLUListElement>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
 

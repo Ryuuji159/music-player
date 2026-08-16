@@ -1,10 +1,10 @@
 import { GripVertical, Play, X } from "lucide-react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
+import { useQueryClient } from "@tanstack/react-query";
 import type { QueueItemDto } from "@skrd/contracts";
-import { queueAPI } from "~/api/queue";
-import { playerAPI } from "~/api/player";
-import { useQueue } from "~/hooks/useQueue";
+import { queueKeys, useClearQueue, useMoveQueueItem, useQueue, useRemoveQueueItem } from "~/hooks/useQueue";
+import { usePlayerActions } from "~/hooks/usePlayer";
 import { NowPlaying } from "./NowPlaying";
 
 function SortableRow({ item, index, onRemove, onPlay }: {
@@ -55,7 +55,12 @@ function SortableRow({ item, index, onRemove, onPlay }: {
 }
 
 export const QueueManager = () => {
-  const [queue, setQueue] = useQueue();
+  const { data: queue = [] } = useQueue();
+  const queryClient = useQueryClient();
+  const moveMutation = useMoveQueueItem();
+  const removeMutation = useRemoveQueueItem();
+  const clearMutation = useClearQueue();
+  const { playItem } = usePlayerActions();
 
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-2">
@@ -81,17 +86,20 @@ export const QueueManager = () => {
           ? { siblingId: prev.id, placement: "after" as const }
           : { siblingId: after!.id, placement: "before" as const };
 
-        setQueue(next);
-        queueAPI.move(draggedId, siblingId, placement).catch(console.error);
+        queryClient.setQueryData(queueKeys.all, next);
+        moveMutation.mutate(
+          { id: draggedId, siblingId, placement },
+          { onError: () => queryClient.invalidateQueries({ queryKey: queueKeys.all }) }
+        );
       }}>
         <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto border-2 border-ink">
           {queue.map((item, index) => (
-            <SortableRow key={item.id} item={item} index={index} onRemove={(id) => queueAPI.remove(id).catch(console.error)} onPlay={(id) => playerAPI.playItem(id).catch(console.error)} />
+            <SortableRow key={item.id} item={item} index={index} onRemove={(id) => removeMutation.mutate(id)} onPlay={(id) => playItem.mutate(id)} />
           ))}
         </ul>
       </DragDropProvider>
 
-      <button className="cursor-pointer border-2 border-red-600 px-4 py-2 font-bold uppercase tracking-wide text-red-600 hover:bg-red-50" onClick={() => queueAPI.clear().catch(console.error)}>
+      <button className="cursor-pointer border-2 border-red-600 px-4 py-2 font-bold uppercase tracking-wide text-red-600 hover:bg-red-50" onClick={() => clearMutation.mutate()}>
         Limpiar cola
       </button>
     </section>

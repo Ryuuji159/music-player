@@ -1,51 +1,43 @@
-import { useEffect, useState, type SubmitEventHandler } from "react";
+import { useState, type SubmitEventHandler } from "react";
 import { Check, ChevronDown, ChevronRight, ListPlus, Loader2, Plus, Trash2 } from "lucide-react";
-import { playlistAPI } from "~/api/playlist";
-import { queueAPI } from "~/api/queue";
-import type { PlaylistDetailDto, PlaylistDto } from "@skrd/contracts";
+import { useAppendVideoToQueue } from "~/hooks/useQueue";
+import { usePlaylist, usePlaylists, useRegisterPlaylist, useRemovePlaylist } from "~/hooks/usePlaylists";
 
 export const AddPlaylist = () => {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [playlists, setPlaylists] = useState<PlaylistDto[]>([]);
-  const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<PlaylistDetailDto | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [addedId, setAddedId] = useState<string | null>(null);
 
-  const load = () => {
-    playlistAPI.list().then(setPlaylists).catch(console.error);
-  };
+  const playlistsQuery = usePlaylists();
+  const detailQuery = usePlaylist(loadedId);
+  const registerMutation = useRegisterPlaylist();
+  const removeMutation = useRemovePlaylist();
+  const appendMutation = useAppendVideoToQueue();
 
-  useEffect(() => {
-    load();
-  }, []);
+  const playlists = playlistsQuery.data ?? [];
+  const detail = detailQuery.data;
 
   const submit: SubmitEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setStatus(null);
-    setLoading(true);
 
     try {
-      await playlistAPI.register(url);
+      await registerMutation.mutateAsync(url);
       setUrl("");
       setStatus({ type: "success", message: "Playlist registrada" });
-      load();
     } catch (err) {
       setStatus({ type: "error", message: err instanceof Error ? err.message : "No se pudo añadir" });
-    } finally {
-      setLoading(false);
     }
   };
 
   const remove = async (id: string) => {
     try {
-      await playlistAPI.remove(id);
+      await removeMutation.mutateAsync(id);
       if (expandedId === id) setExpandedId(null);
-      if (detail?.id === id) setDetail(null);
-      load();
+      if (loadedId === id) setLoadedId(null);
     } catch (err) {
       console.error(err);
     }
@@ -58,23 +50,13 @@ export const AddPlaylist = () => {
     }
 
     setExpandedId(id);
+    setLoadedId(id);
     setSearch("");
-    if (detail?.id === id) return;
-
-    setDetailLoading(true);
-    playlistAPI
-      .get(id)
-      .then(setDetail)
-      .catch((err) => {
-        console.error(err);
-        setDetail(null);
-      })
-      .finally(() => setDetailLoading(false));
   };
 
   const addToQueue = async (videoId: string) => {
     try {
-      await queueAPI.appendVideo(videoId);
+      await appendMutation.mutateAsync(videoId);
       setAddedId(videoId);
       setTimeout(() => setAddedId((cur) => (cur === videoId ? null : cur)), 1500);
     } catch (err) {
@@ -109,10 +91,10 @@ export const AddPlaylist = () => {
         />
         <button
           type="submit"
-          disabled={loading}
+          disabled={registerMutation.isPending}
           className="flex cursor-pointer items-center justify-center gap-2 border-2 border-ink bg-accent px-4 py-2 font-bold uppercase tracking-wide text-accent-ink hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? (
+          {registerMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Cargando
@@ -123,7 +105,7 @@ export const AddPlaylist = () => {
         </button>
       </form>
 
-      {loading && (
+      {registerMutation.isPending && (
         <p className="text-sm text-ink-muted">Importando canciones de la playlist, puede tardar unos segundos…</p>
       )}
 
@@ -180,7 +162,7 @@ export const AddPlaylist = () => {
                           placeholder="Buscar canción…"
                           className="mb-2 w-full border-2 border-ink bg-surface-card px-3 py-1.5 text-sm text-ink outline-none focus:border-accent"
                         />
-                        {detailLoading ? (
+                        {detailQuery.isLoading ? (
                           <p className="flex items-center gap-2 text-sm text-ink-muted">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Cargando videos…

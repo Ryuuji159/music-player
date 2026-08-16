@@ -1,19 +1,37 @@
-import type { QueueItemDto } from "@skrd/contracts";
-import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queueAPI } from "~/api/queue";
-import { useRealtime } from "~/context/RealtimeContext";
+
+export const queueKeys = {
+    all: ["queue"] as const,
+};
 
 export function useQueue() {
-    const {lastEvent} = useRealtime();
-    const [queue, setQueue] = useState<QueueItemDto[]>([]);
+    return useQuery({
+        queryKey: queueKeys.all,
+        queryFn: queueAPI.current,
+        staleTime: Infinity,
+    });
+}
 
-    useEffect(() => {
-        queueAPI.current().then(setQueue).catch(console.error);
-    }, []);
+export function useAppendToQueue() {
+    return useMutation({ mutationFn: queueAPI.append });
+}
 
-    useEffect(() => {
-        if(lastEvent?.type === 'queue.updated') setQueue(lastEvent.data);
-    }, [lastEvent]);
+export function useAppendVideoToQueue() {
+    return useMutation({ mutationFn: queueAPI.appendVideo });
+}
 
-    return [queue, setQueue] as const;
+export function useMoveQueueItem() {
+    return useMutation({
+        mutationFn: (args: { id: string; siblingId: string; placement: "before" | "after" }) =>
+            queueAPI.move(args.id, args.siblingId, args.placement),
+    });
+}
+
+export function useRemoveQueueItem() {
+    return useMutation({ mutationFn: queueAPI.remove });
+}
+
+export function useClearQueue() {
+    return useMutation({ mutationFn: queueAPI.clear });
 }

@@ -1,7 +1,7 @@
 import { useQueue } from "~/hooks/useQueue";
 
 export const Queue = () => {
-    const [queue] = useQueue();
+    const { data: queue = [] } = useQueue();
     return (
     <section className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">

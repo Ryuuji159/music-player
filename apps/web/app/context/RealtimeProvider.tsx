@@ -1,13 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react"
+import { useQueryClient } from "@tanstack/react-query";
 import { RealtimeContext } from "./RealtimeContext";
 import { createRealtimeClient } from "./realtime.client";
 import { realtimeEventSchema, type RealtimeEvent } from "@skrd/contracts";
+import { queueKeys } from "~/hooks/useQueue";
 
 type Props = {
     children: ReactNode;
 }
 
 export const RealTimeProvider = ({ children }: Props) => {
+    const queryClient = useQueryClient();
     const [lastEvent, setLastEvent] = useState<RealtimeEvent | null>(null);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -24,6 +27,10 @@ export const RealTimeProvider = ({ children }: Props) => {
                     data: JSON.parse(message.data),
                 });
                 setLastEvent(parsed);
+
+                if (parsed.type === "queue.updated") {
+                    queryClient.setQueryData(queueKeys.all, parsed.data);
+                }
             } catch {
                 setError("No se pudo interpretar el evento SSE");
             }
