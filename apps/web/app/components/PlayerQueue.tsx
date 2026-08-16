@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Maximize, Minimize } from "lucide-react";
+import { ListMusic, Maximize, Minimize } from "lucide-react";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { useQueue } from "~/hooks/useQueue";
+import { cn } from "~/lib/utils";
 
 export const PlayerQueue = () => {
     const { data: queue = [] } = useQueue();
@@ -31,22 +36,38 @@ export const PlayerQueue = () => {
     };
 
     if (queue.length === 0) {
-        return <p className="p-4 text-ink-muted">La cola está vacía</p>;
+        return (
+            <Empty className="p-6">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon"><ListMusic /></EmptyMedia>
+                    <EmptyTitle>La cola está vacía</EmptyTitle>
+                    <EmptyDescription>No hay canciones en la cola.</EmptyDescription>
+                </EmptyHeader>
+            </Empty>
+        );
     }
 
     return (
         <>
             <div className="flex items-center justify-between">
-                <span className="text-sm font-bold uppercase tracking-wide text-ink-muted">
+                <span className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
                     En cola · {currentIndex >= 0 ? currentIndex + 1 : 0} / {queue.length}
                 </span>
-                <button
-                    className="cursor-pointer text-ink-muted hover:text-ink"
-                    onClick={toggleFullscreen}
-                    aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-                >
-                    {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-                </button>
+                <Tooltip>
+                    <TooltipTrigger
+                        render={
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={toggleFullscreen}
+                                aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                            />
+                        }
+                    >
+                        {isFullscreen ? <Minimize /> : <Maximize />}
+                    </TooltipTrigger>
+                    <TooltipContent>{isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}</TooltipContent>
+                </Tooltip>
             </div>
             <ul ref={listRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                 {queue.map((item) => {
@@ -55,7 +76,12 @@ export const PlayerQueue = () => {
                         <li
                             key={item.id}
                             data-current={isCurrent ? "true" : undefined}
-                            className={`flex gap-3 p-3 ${isCurrent ? "border-l-4 border-accent bg-accent/15" : "border-l-4 border-transparent border-b border-line last:border-b-0"}`}
+                            className={cn(
+                                "flex gap-3 p-3",
+                                isCurrent
+                                    ? "border-l-4 border-primary bg-primary/15"
+                                    : "border-l-4 border-transparent border-b last:border-b-0"
+                            )}
                         >
                             <img
                                 src={item.media.thumbnailUrl}
@@ -63,10 +89,11 @@ export const PlayerQueue = () => {
                                 className="h-14 w-24 shrink-0 object-cover"
                             />
                             <div className="min-w-0">
-                                <p className={`line-clamp-2 leading-tight text-ink ${isCurrent ? "font-semibold" : ""}`}>
+                                <p className={cn("line-clamp-2 leading-tight", isCurrent && "font-semibold")}>
                                     {item.media.title}
+                                    {isCurrent && <Badge className="ml-2">Sonando</Badge>}
                                 </p>
-                                <p className="truncate text-sm text-ink-muted">{item.media.channelTitle}</p>
+                                <p className="truncate text-sm text-muted-foreground">{item.media.channelTitle}</p>
                             </div>
                         </li>
                     );

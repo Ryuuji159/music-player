@@ -1,28 +1,25 @@
 import { ExternalLink, Smartphone } from "lucide-react";
+import { Button } from "~/components/ui/button";
 
 export const ControlHeader = () => {
   return (
-    <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b-2 border-ink bg-surface px-6 py-3">
-      <h1 className="text-xl font-bold uppercase tracking-tight">Panel de control</h1>
+    <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b bg-background px-6 py-3">
+      <h1 className="font-heading text-xl font-medium">Panel de control</h1>
       <nav className="flex flex-wrap items-center gap-2">
-        <a
-          href="/"
-          target="_blank"
-          rel="noreferrer"
-          className="flex cursor-pointer items-center gap-2 border-2 border-ink bg-surface-card px-4 py-2 font-bold uppercase text-ink hover:bg-ink hover:text-surface-card"
+        <Button
+          variant="outline"
+          render={<a href="/" target="_blank" rel="noreferrer" />}
         >
-          <Smartphone className="h-4 w-4" />
+          <Smartphone data-icon="inline-start" />
           Vista de cliente
-        </a>
-        <a
-          href="/player"
-          target="_blank"
-          rel="noreferrer"
-          className="flex cursor-pointer items-center gap-2 border-2 border-ink bg-surface-card px-4 py-2 font-bold uppercase text-ink hover:bg-ink hover:text-surface-card"
+        </Button>
+        <Button
+          variant="outline"
+          render={<a href="/player" target="_blank" rel="noreferrer" />}
         >
-          <ExternalLink className="h-4 w-4" />
+          <ExternalLink data-icon="inline-start" />
           Abrir reproductor
-        </a>
+        </Button>
       </nav>
     </header>
   );

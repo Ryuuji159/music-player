@@ -1,6 +1,4 @@
 import type { Route } from "./+types/control";
-import { SkipBack, Play, Pause, SkipForward } from "lucide-react";
-import { usePlayerActions } from "~/hooks/usePlayer";
 import { QueueManager } from "~/components/QueueManager";
 import { AddSongForm } from "~/components/AddSongForm";
 import { AddPlaylist } from "~/components/AddPlaylist";
@@ -13,51 +11,26 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Control() {
-    const { play, pause, previous, next } = usePlayerActions();
-    const btn = "flex w-full cursor-pointer items-center justify-center gap-2 border-2 border-ink bg-surface-card px-4 py-2 font-bold uppercase text-ink hover:bg-ink hover:text-surface-card";
-
     return (
-        <div className="flex min-h-screen w-screen flex-col bg-surface text-ink lg:h-screen lg:overflow-hidden">
+        <div className="flex min-h-screen w-screen flex-col bg-background text-foreground">
             <ControlHeader />
 
-            <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 p-6 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_380px]">
-                <aside className="flex flex-col gap-6 lg:min-h-0 lg:overflow-y-auto">
+            <main className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_460px]">
+                <aside className="flex flex-col gap-6">
                     <section className="flex flex-col gap-2">
-                        <h2 className="text-sm font-bold uppercase tracking-wide text-ink-muted">Añadir canción</h2>
+                        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Añadir canción</h2>
                         <AddSongForm />
                     </section>
 
                     <MediaLibrary />
-
-                    <section className="flex flex-col gap-2">
-                        <h2 className="text-sm font-bold uppercase tracking-wide text-ink-muted">Reproducción</h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <button className="flex w-full cursor-pointer items-center justify-center gap-2 border-2 border-ink bg-accent px-4 py-2 font-bold uppercase text-accent-ink hover:bg-accent/90" onClick={() => play.mutate()}>
-                                <Play className="h-4 w-4" />
-                                Reproducir
-                            </button>
-                            <button className={btn} onClick={() => pause.mutate()}>
-                                <Pause className="h-4 w-4" />
-                                Pausar
-                            </button>
-                            <button className={btn} onClick={() => previous.mutate()}>
-                                <SkipBack className="h-4 w-4" />
-                                Anterior
-                            </button>
-                            <button className={btn} onClick={() => next.mutate()}>
-                                <SkipForward className="h-4 w-4" />
-                                Siguiente
-                            </button>
-                        </div>
-                    </section>
 
                     <AddPlaylist />
 
                     <SongRequests />
                 </aside>
 
-                <section className="flex min-h-0 flex-col gap-2">
-                    <h2 className="shrink-0 text-sm font-bold uppercase tracking-wide text-ink-muted">Cola actual</h2>
+                <section className="flex flex-col gap-2 lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:min-h-0 lg:self-start">
+                    <h2 className="shrink-0 text-sm font-bold uppercase tracking-wide text-muted-foreground">Cola actual</h2>
                     <QueueManager />
                 </section>
             </main>

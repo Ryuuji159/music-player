@@ -30,7 +30,7 @@ export default function Player() {
 
 
     return (
-        <div className="theme-dark max-h-screen h-screen w-screen bg-black">
+        <div className="theme-dark max-h-screen h-screen w-screen bg-background text-foreground">
             <div className="grid grid-cols-12 h-full">
                 <div className="col-span-9">
                     <YoutubePlayer

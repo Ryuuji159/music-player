@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Check, Library, Loader2, Plus, Search } from "lucide-react";
+import { Check, Library, Plus, Search } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
+import { Input } from "~/components/ui/input";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { useMediaSearch } from "~/hooks/useMedia";
 import { useAppendVideoToQueue } from "~/hooks/useQueue";
 
@@ -28,57 +34,76 @@ export const MediaLibrary = () => {
   };
 
   return (
-    <section className="flex flex-col gap-2 border-2 border-line p-4">
-      <div className="flex items-center gap-2">
-        <Library className="h-4 w-4 text-ink-muted" />
-        <h2 className="text-sm font-bold uppercase tracking-wide text-ink-muted">Biblioteca</h2>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Library className="size-4 text-muted-foreground" />
+          Biblioteca
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        <div className="relative">
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar canción registrada…"
+            className="pl-9"
+          />
+        </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar canción registrada…"
-          className="w-full border-2 border-ink bg-surface-card py-2 pl-9 pr-3 text-ink outline-none focus:border-accent"
-        />
-      </div>
+        {searchQuery.isFetching && results.length === 0 && (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        )}
 
-      {searchQuery.isFetching && (
-        <p className="flex items-center gap-2 text-sm text-ink-muted">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Buscando…
-        </p>
-      )}
+        {!searchQuery.isFetching && debouncedQuery.length === 0 && (
+          <Empty className="p-6">
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Search /></EmptyMedia>
+              <EmptyTitle>Busca una canción</EmptyTitle>
+              <EmptyDescription>Busca entre las canciones ya registradas en el sistema.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
 
-      {!searchQuery.isFetching && debouncedQuery.length > 0 && results.length === 0 && (
-        <p className="text-sm text-ink-muted">Sin resultados</p>
-      )}
+        {!searchQuery.isFetching && debouncedQuery.length > 0 && results.length === 0 && (
+          <Empty className="p-6">
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Search /></EmptyMedia>
+              <EmptyTitle>Sin resultados</EmptyTitle>
+              <EmptyDescription>Prueba con otro término.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
 
-      {results.length > 0 && (
-        <ul className="max-h-64 divide-y divide-line overflow-y-auto border-2 border-line">
-          {results.map((media) => (
-            <li key={media.id} className="flex items-center gap-3 py-2 px-2">
-              <img src={media.thumbnailUrl} alt="" className="h-9 w-12 shrink-0 object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-ink">{media.title}</p>
-                <p className="truncate text-xs text-ink-muted">{media.channelTitle}</p>
-              </div>
-              <button
-                onClick={() => addToQueue(media.videoId)}
-                className="shrink-0 cursor-pointer text-ink-muted hover:text-ink"
-                aria-label="Añadir a la cola"
-              >
-                {addedId === media.videoId ? (
-                  <Check className="h-4 w-4 text-green-600" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+        {results.length > 0 && (
+          <ul className="max-h-64 divide-y divide-border overflow-y-auto">
+            {results.map((media) => (
+              <li key={media.id} className="flex items-center gap-3 py-2">
+                <img src={media.thumbnailUrl} alt="" className="h-9 w-12 shrink-0 object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{media.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">{media.channelTitle}</p>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button variant="ghost" size="icon-sm" onClick={() => addToQueue(media.videoId)} aria-label="Añadir a la cola" />
+                    }
+                  >
+                    {addedId === media.videoId ? <Check /> : <Plus />}
+                  </TooltipTrigger>
+                  <TooltipContent>Añadir a la cola</TooltipContent>
+                </Tooltip>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 };
