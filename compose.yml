@@ -10,6 +10,41 @@ services:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-player} -d ${POSTGRES_DB:-player}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-player}:${POSTGRES_PASSWORD:-secret}@db:5432/${POSTGRES_DB:-player}?schema=public
+      YOUTUBE_KEY: ${YOUTUBE_KEY:-}
+      PORT: '3000'
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        VITE_EVENTS_URL: ${VITE_EVENTS_URL:-http://localhost:3000/events}
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    depends_on:
+      - api
 
 volumes:
   postgres_data:
