@@ -4,6 +4,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { MediaService } from "./media.service";
 import { EventsService } from "../realtime/events.service";
 import { toQueueItemDto } from "./queue.mapper";
+import { notBlockedMediaFilter } from "../player/playback-errors";
 
 @Injectable()
 export class QueueService {
@@ -16,6 +17,7 @@ export class QueueService {
     async current(): Promise<QueueItemDto[]> {
         const items = await this.prisma.queueItem.findMany({
             orderBy: { position: 'asc' },
+            where: { media: notBlockedMediaFilter },
             include: { media: true }
         });
 

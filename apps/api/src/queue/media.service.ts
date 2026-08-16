@@ -4,6 +4,7 @@ import { YoutubeService } from "../youtube/youtube.service";
 import { MediaItemDto, YoutubeId } from "@skrd/contracts";
 import type { MediaItem } from "../prisma/generated/prisma/client";
 import { toMediaDto } from "./queue.mapper";
+import { notBlockedMediaFilter } from "../player/playback-errors";
 
 @Injectable()
 export class MediaService {
@@ -72,12 +73,17 @@ export class MediaService {
         const items = await this.prisma.mediaItem.findMany({
             where: query
                 ? {
-                      OR: [
-                          { title: { contains: query, mode: "insensitive" } },
-                          { channelTitle: { contains: query, mode: "insensitive" } },
+                      AND: [
+                          notBlockedMediaFilter,
+                          {
+                              OR: [
+                                  { title: { contains: query, mode: "insensitive" } },
+                                  { channelTitle: { contains: query, mode: "insensitive" } },
+                              ],
+                          },
                       ],
                   }
-                : undefined,
+                : notBlockedMediaFilter,
             orderBy: { title: "asc" },
             take: 100,
         });

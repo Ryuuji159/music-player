@@ -74,7 +74,7 @@ export class YoutubeService {
         const response = await this.get("playlists", {
             key: this.config.getOrThrow("YOUTUBE_KEY"),
             id: playlistId,
-            part: "snippet"
+            part: "snippet,contentDetails"
         });
 
         const item = response.data?.items?.[0];
@@ -82,10 +82,16 @@ export class YoutubeService {
         return {
             title: item.snippet.title,
             thumbnailUrl: item.snippet.thumbnails?.default?.url ?? null,
+            itemCount: item.contentDetails?.itemCount ?? 0,
         }
     }
 
-    async listPlaylistVideoIds(playlistId: PlaylistId): Promise<YoutubeId[]> {
+    isMixPlaylist(playlistId: PlaylistId, itemCount?: number): boolean {
+        if (playlistId.startsWith("RD")) return true;
+        return itemCount === 0;
+    }
+
+    async listPlaylistVideoIds(playlistId: PlaylistId, limit = 1000): Promise<YoutubeId[]> {
         const ids: YoutubeId[] = [];
 
         let pageToken: string | undefined;
@@ -101,9 +107,14 @@ export class YoutubeService {
             for (const it of response.data?.items ?? []) {
                 const videoId = it.snippet?.resourceId?.videoId;
                 if (videoId) ids.push(videoId);
+                if (ids.length >= limit) break;
             }
             pageToken = response.data?.nextPageToken;
-        } while (pageToken);
+        } while (pageToken && ids.length < limit);
+
+        if (ids.length >= limit) {
+            this.logger.log(`Playlist ${playlistId} truncated at ${limit} videos`);
+        }
 
         return ids;
     }

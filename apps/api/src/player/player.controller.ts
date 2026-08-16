@@ -1,6 +1,7 @@
-import { Controller, Param, Post } from "@nestjs/common";
+import { Controller, Param, Post, Body } from "@nestjs/common";
 import { PlayerService } from "./player.service";
 import { ZodValidationPipe } from "../zod-validation.pipe";
+import { playerErrorSchema } from "@skrd/contracts";
 import z from "zod";
 
 @Controller('/player')
@@ -30,6 +31,13 @@ export class PlayerController {
     @Post("/events/ended")
     async ended() {
         await this.player.ended();
+    }
+
+    @Post("/events/error")
+    async error(
+        @Body(new ZodValidationPipe(playerErrorSchema)) body: { code: number },
+    ) {
+        await this.player.error(body.code);
     }
 
     @Post("/item/:id/play")

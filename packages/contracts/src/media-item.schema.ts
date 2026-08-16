@@ -8,6 +8,7 @@ export const mediaItemSchema = z.object({
     thumbnailUrl: z.url(),
     duration: z.number().int().nonnegative(),
     embeddable: z.boolean(),
+    playbackErrorCode: z.number().int().nullable(),
 })
 
 export type MediaItemDto = z.infer<typeof mediaItemSchema>;

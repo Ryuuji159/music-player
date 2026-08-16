@@ -3,6 +3,7 @@ export * from "./append-to-queue.schema";
 export * from "./media-item.schema";
 export * from "./move-queue.schema";
 export * from "./player-command.schema";
+export * from "./player-error.schema";
 export * from "./queue-item.schema";
 export * from "./realtime-event.schema";
 export * from "./youtube-id.schema";

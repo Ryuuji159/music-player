@@ -8,18 +8,24 @@ export interface PlayerAction {
 
 type Props = {
   onEnded: () => void;
+  onError: (code: number) => void;
   ref?: React.Ref<PlayerAction>;
 }
 
-export const YoutubePlayer = ({ onEnded, ref }: Props) => {
+export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YT.Player>(null);
   const onEndedRef = useRef(onEnded);
+  const onErrorRef = useRef(onError);
   const pendingVideoIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     onEndedRef.current = onEnded;
   }, [onEnded]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   useImperativeHandle(ref, () => ({
     play(videoId) {
@@ -48,18 +54,24 @@ export const YoutubePlayer = ({ onEnded, ref }: Props) => {
       playerRef.current = new window.YT.Player(containerRef.current, {
         width: "100%",
         height: "100%",
-        playerVars: {  },
+        playerVars: {},
         events: {
           onReady: (event) => {
             const pending = pendingVideoIdRef.current;
-            if(pending) {
+            if (pending) {
               playerRef.current?.loadVideoById(pending);
               pendingVideoIdRef.current = null;
             }
           },
           onStateChange: (event) => {
-            if(event.data === YT.PlayerState.ENDED) {
+            console.log(event.data);
+            if (event.data === YT.PlayerState.ENDED) {
               onEndedRef.current?.();
+            }
+          },
+          onError: (event) => {
+            if (typeof event.data === "number") {
+              onErrorRef.current?.(event.data);
             }
           },
         },
@@ -86,5 +98,5 @@ export const YoutubePlayer = ({ onEnded, ref }: Props) => {
     }
   }, []);
 
-  return <div ref={containerRef} className="h-full w-full"/>;
+  return <div ref={containerRef} className="h-full w-full" />;
 }

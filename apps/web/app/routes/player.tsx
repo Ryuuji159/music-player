@@ -12,7 +12,7 @@ export function meta({ }: Route.MetaArgs) {
 export default function Player() {
     const playerActionRef = useRef<PlayerAction>(null);
     const { lastEvent } = useRealtime();
-    const { play, ended } = usePlayerActions();
+    const { play, ended, error } = usePlayerActions();
 
     useEffect(() => {
         play.mutate();
@@ -36,6 +36,7 @@ export default function Player() {
                     <YoutubePlayer
                         ref={playerActionRef}
                         onEnded={() => ended.mutate()}
+                        onError={(code) => error.mutate(code)}
                     />
                 </div>
                 <div className="col-span-3 flex min-h-0 flex-col gap-2 m-2">

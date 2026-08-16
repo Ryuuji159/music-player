@@ -13,7 +13,8 @@ export function toMediaDto(media: MediaItem): MediaItemDto {
         channelTitle: media.channelTitle,
         thumbnailUrl: media.thumbnailUrl,
         duration: durationToSeconds(media.duration),
-        embeddable: media.embeddable
+        embeddable: media.embeddable,
+        playbackErrorCode: media.playbackErrorCode,
     };
 }
 

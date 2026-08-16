@@ -7,7 +7,8 @@ export function usePlayerActions() {
     const next = useMutation({ mutationFn: playerAPI.next });
     const previous = useMutation({ mutationFn: playerAPI.previous });
     const ended = useMutation({ mutationFn: playerAPI.ended });
+    const error = useMutation({ mutationFn: playerAPI.error });
     const playItem = useMutation({ mutationFn: playerAPI.playItem });
 
-    return { play, pause, next, previous, ended, playItem };
+    return { play, pause, next, previous, ended, error, playItem };
 }

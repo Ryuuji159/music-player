@@ -4,6 +4,10 @@ import { YoutubeService } from "../youtube/youtube.service";
 import { MediaService } from "../queue/media.service";
 import { PlaylistId } from "@skrd/contracts";
 import { toPlaylistDetailDto, toPlaylistDto } from "./playlist.mapper";
+import { notBlockedMediaFilter } from "../player/playback-errors";
+
+const PLAYLIST_LIMIT = 1000;
+const MIX_PLAYLIST_LIMIT = 100;
 
 @Injectable()
 export class PlaylistService {
@@ -31,7 +35,7 @@ export class PlaylistService {
     async get(id: string) {
         const playlist = await this.prisma.playlist.findUnique({
             where: { id },
-            include: { items: { orderBy: { position: "asc" }, include: { media: true } } }
+            include: { items: { where: { media: notBlockedMediaFilter }, orderBy: { position: "asc" }, include: { media: true } } }
         });
 
         if (!playlist) {
@@ -47,7 +51,13 @@ export class PlaylistService {
         const info = await this.youtube.getPlaylistInfo(playlistId);
         this.logger.log(`Playlist info: ${info?.title ?? "(no title)"}`);
 
-        const videoIds = await this.youtube.listPlaylistVideoIds(playlistId);
+        const isMix = this.youtube.isMixPlaylist(playlistId, info?.itemCount);
+        const limit = isMix ? MIX_PLAYLIST_LIMIT : PLAYLIST_LIMIT;
+        if (isMix) {
+            this.logger.log(`Playlist ${playlistId} detected as mix (radio), limiting to ${limit} videos`);
+        }
+
+        const videoIds = await this.youtube.listPlaylistVideoIds(playlistId, limit);
         this.logger.log(`Playlist has ${videoIds.length} videos`);
 
         const mediaList = await this.mediaService.resolveMany(videoIds);
@@ -86,10 +96,13 @@ export class PlaylistService {
     }
 
     async randomMedia() {
-        const count = await this.prisma.playlistItem.count();
+        const count = await this.prisma.playlistItem.count({
+            where: { media: notBlockedMediaFilter },
+        });
         if (!count) return null;
 
         const item = await this.prisma.playlistItem.findFirst({
+            where: { media: notBlockedMediaFilter },
             skip: Math.floor(Math.random() * count),
             include: { media: true },
         })

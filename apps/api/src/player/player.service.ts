@@ -3,6 +3,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { EventsService } from "../realtime/events.service";
 import { QueueService } from "../queue/queue.service";
 import { PlaylistService } from "../playlist/playlist.service";
+import { notBlockedMediaFilter } from "./playback-errors";
 
 type CommandAction = "play" | "pause" | "stop";
 
@@ -42,6 +43,7 @@ export class PlayerService {
 
         const first = await this.prisma.queueItem.findFirst({
             select: { id: true },
+            where: { media: notBlockedMediaFilter },
             orderBy: { position: "asc" },
         });
         if (!first) {
@@ -99,6 +101,21 @@ export class PlayerService {
         await this.advance(true);
     }
 
+    async error(code: number) {
+        const current = await this.prisma.queueItem.findFirst({
+            select: { media: { select: { id: true } } },
+            where: { status: { in: ["playing", "paused"] } },
+        });
+        if (!current) return;
+
+        await this.prisma.mediaItem.update({
+            where: { id: current.media.id },
+            data: { playbackErrorCode: code },
+        });
+
+        await this.advance(true);
+    }
+
     async previous() {
         const current = await this.prisma.queueItem.findFirst({
             select: { id: true, position: true },
@@ -109,7 +126,7 @@ export class PlayerService {
 
         const prevItem = await this.prisma.queueItem.findFirst({
             select: { id: true },
-            where: { position: { lt: currentPosition } },
+            where: { position: { lt: currentPosition }, media: notBlockedMediaFilter },
             orderBy: { position: "desc" },
         });
         if (!prevItem) return;
@@ -135,7 +152,7 @@ export class PlayerService {
         const currentPosition = current ? current.position : -Infinity;
         const nextItem = await this.prisma.queueItem.findFirst({
             select: { id: true },
-            where: { position: { gt: currentPosition } },
+            where: { position: { gt: currentPosition }, media: notBlockedMediaFilter },
             orderBy: { position: "asc" },
         });
 

@@ -23,6 +23,7 @@ model MediaItem {
   thumbnailUrl String
   duration     String
   embeddable   Boolean
+  playbackErrorCode Int?
 
   queues        QueueItem[]
   playlistItems PlaylistItem[]

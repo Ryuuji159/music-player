@@ -30,11 +30,11 @@ player/
 
 ## 3. Stack
 
-| Paquete     | Tecnología                                                                            |
-| ----------- | ------------------------------------------------------------------------------------- |
-| `api`       | NestJS 11, Prisma 7 (`prisma-client` + `adapter-pg`), Zod 4, SSE, Swagger (`/api`)    |
-| `web`       | React Router 8 (SSR), Vite 8, Tailwind CSS 4, `lucide-react`, `@dnd-kit/react`, Zod 4 |
-| `contracts` | Zod 4 + TypeScript, compilado con `tsup` a doble formato (CJS + ESM)                  |
+| Paquete     | Tecnología                                                                                          |
+| ----------- | --------------------------------------------------------------------------------------------------- |
+| `api`       | NestJS 11, Prisma 7 (`prisma-client` + `adapter-pg`), Zod 4, SSE, Swagger (`/api`)                  |
+| `web`       | React Router 8 (SSR), Vite 8, Tailwind CSS 4, **shadcn/ui (Base UI)**, **TanStack Query**, `lucide-react`, `@dnd-kit/react`, Zod 4 |
+| `contracts` | Zod 4 + TypeScript, compilado con `tsup` a doble formato (CJS + ESM)                                |
 
 ## 4. Comandos (desde la raíz)
 
@@ -54,12 +54,15 @@ npm run typecheck             # contracts + typecheck web + build api
 
 Única fuente de verdad de los tipos/schemas de la API. Todo lo que cruza HTTP/SSE está definido aquí con Zod:
 
-- `media-item.schema.ts` → `MediaItemDto` (id, videoId, title, channelTitle, thumbnailUrl, **duration en segundos (number)**, embeddable).
+- `media-item.schema.ts` → `MediaItemDto` (id, videoId, title, channelTitle, thumbnailUrl, **duration en segundos (number)**, embeddable) + `mediaListSchema`.
 - `queue-item.schema.ts` → `QueueItemDto` (id, position, status, media) y `QueueDto` (array).
 - `player-command.schema.ts` → `PlayerCommandDto` `{ action: "play" | "pause" | "stop", videoId: string | null }`.
 - `realtime-event.schema.ts` → unión discriminada por `type`: `queue.updated` | `player.command`.
 - `api-error.schema.ts` → shape de error `{ statusCode, message, errors? }`.
 - `append-to-queue.schema.ts`, `move-queue.schema.ts`, `youtube-url.schema.ts`, `youtube-id.schema.ts` → inputs.
+- `playlist.schema.ts` → `PlaylistDto` (id, playlistId, title, thumbnailUrl, `itemCount`) y `PlaylistDetailDto` (añade `items: MediaItemDto[]`).
+- `playlist-url.schema.ts` → `playlistUrlSchema` (extrae el `list` param de la URL → brand `PlaylistId`).
+- `register-playlist.schema.ts` → `registerPlaylistSchema` `{ url }` → `{ playlistId }` (mismo patrón que `append-to-queue`).
 
 **Regla:** cualquier cambio en la forma de una respuesta o evento se hace aquí y luego se propaga. El front valida las respuestas en runtime con estos schemas.
 
@@ -71,6 +74,8 @@ npm run typecheck             # contracts + typecheck web + build api
 ### Modelo de datos (Prisma)
 - `MediaItem`: metadata de un video de YouTube (videoId único en la práctica; título, canal, thumbnail, duración ISO en la columna, embeddable).
 - `QueueItem`: `position` (float, reorden fraccionario), `status` (enum `QueueStatus`: `queued | playing | paused`), `mediaId`.
+- `Playlist`: playlist de backup registrada (`playlistId` único = id de YouTube, `title`, `thumbnailUrl`).
+- `PlaylistItem`: join `playlist ↔ media` con `position` (orden en la playlist). `@@unique([playlistId, mediaId])` → deduplica canciones repetidas.
 - **Cursor de reproducción** = el único `QueueItem` con `status` `playing` (o `paused`). No existe `ended`: al terminar una canción vuelve a `queued` y queda en la cola.
 
 ### Endpoints
@@ -78,10 +83,16 @@ npm run typecheck             # contracts + typecheck web + build api
 | ------ | ----------------------- | ------------------------------------------------------ |
 | GET    | `/queue`                | cola actual ordenada por `position`                    |
 | POST   | `/queue/append`         | `{ url }` → resuelve y añade al final                  |
+| POST   | `/queue/append/video/:videoId` | añade a la cola por `videoId` (desde playlist/biblioteca) |
 | POST   | `/queue/item/:id/move`  | `{ siblingId, placement: "before"\|"after" }` reordena |
 | DELETE | `/queue/item/:id`       | elimina un item                                        |
 | DELETE | `/queue/clear`          | vacía la cola                                          |
 | POST   | `/queue/push`           | fuerza `queue.updated` (broadcast manual)              |
+| GET    | `/media?q=`             | busca media registrada (biblioteca)                    |
+| GET    | `/playlist`             | lista playlists de backup                              |
+| POST   | `/playlist`             | `{ url }` → registra/refresca una playlist (importa items) |
+| GET    | `/playlist/:id`         | detalle de una playlist (con `items: MediaItemDto[]`)  |
+| DELETE | `/playlist/:id`         | elimina una playlist                                   |
 | POST   | `/player/play`          | reproduce/resume (idempotente)                         |
 | POST   | `/player/pause`         | pausa                                                  |
 | POST   | `/player/next`          | siguiente                                              |
@@ -103,6 +114,15 @@ front (botón/ended) → POST /player/* → backend actualiza status + emite pla
 ```
 El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un comando.
 
+### YouTube Data API (servicio)
+- `YoutubeService` usa `@nestjs/axios` y valida con Zod. Métodos: `getVideoInfo`, `getVideosInfo` (bulk, lotes de 50), `getPlaylistInfo`, `listPlaylistVideoIds` (paginando `playlistItems` con `nextPageToken`).
+- **Parsing leniente**: `getVideosInfo` usa `youtubeListLenientSchema` (por ítem, con `contentDetails`/`status`/`thumbnails` opcionales) y salta solo los videos inválidos (privados/eliminados). No validar el array entero con schema estricto: un solo ítem malo descartaba el lote entero de 50.
+
+### Playlist de backup (reproducción en cola vacía)
+- `register` trae todos los `videoId` de la playlist (paginado) → `mediaService.resolveMany` en bulk → `createMany` de `PlaylistItem` (con `position`). Re-registrar reemplaza los items (idempotente por `playlistId`).
+- **Deduplicación**: el `@@unique([playlistId, mediaId])` exige deduplicar por `media.id` antes de `createMany` (las playlists pueden repetir canciones).
+- Cuando la cola se queda sin siguiente (o `play` con cola vacía), `PlayerService` toma un `MediaItem` random de las playlists (`PlaylistService.randomMedia()`) y lo encola + reproduce. Sin playlists → `stop` (comportamiento previo).
+
 ### Convenciones
 - Validación de inputs con `ZodValidationPipe` + schemas de `@skrd/contracts`.
 - Serialización de respuestas con mappers (`queue/queue.mapper.ts`): Prisma → DTO normalizado (`duration` ISO → segundos con `Temporal`).
@@ -122,27 +142,34 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 - `YoutubePlayer.tsx`: iframe de YouTube; se maneja por `ref` (play/pause/stop); emite `onEnded` cuando el video termina (`YT.PlayerState.ENDED`).
 - `Queue.tsx`: cola de solo lectura (cliente).
 - `PlayerQueue.tsx`: cola de la pantalla (más grande, resalta actual con borde izquierdo + fondo, auto-scroll al item actual).
-- `QueueManager.tsx`: cola interactiva del panel (drag & drop con `@dnd-kit/react`, botón ▶ por fila, ✕ eliminar, limpiar).
+- `QueueManager.tsx`: cola interactiva del panel (drag & drop con `@dnd-kit/react`, controles de reproducción por icono, botón ▶ por fila, ✕ eliminar, limpiar, empty state y auto-scroll al item actual).
 - `NowPlaying.tsx`: tarjeta "Sonando ahora".
 - `AddSongForm.tsx`: formulario de añadir (URL).
-- `hooks/useQueue.ts`: estado compartido de la cola (fetch inicial + reacción a `queue.updated`).
+- `AddPlaylist.tsx` + `PlaylistRow.tsx` + `PlaylistItems.tsx`: sección de playlists de backup (registro, expandir con `Collapsible`, búsqueda de canciones, añadir a cola, menú de acciones por playlist).
+- `MediaLibrary.tsx`: búsqueda de media registrada (biblioteca) con añadir a cola.
+
+### Data fetching (TanStack Query)
+- Todas las llamadas a API pasan por hooks de TanStack Query (caché + mutaciones). Los métodos crudos viven en `api/*.ts` (`http.ts`, `queue.ts`, `player.ts`, `media.ts`, `playlist.ts`).
+- `hooks/useQueue.ts`: `useQueue()` (query `["queue"]`, `staleTime: Infinity`) + mutaciones (`useAppendToQueue`, `useAppendVideoToQueue`, `useMoveQueueItem`, `useRemoveQueueItem`, `useClearQueue`). La cola **no se refetchea**: se actualiza por SSE.
+- `hooks/usePlayer.ts`: `usePlayerActions()` (mutaciones play/pause/next/previous/ended/playItem).
+- `hooks/useMedia.ts`: `useMediaSearch(q)` (clave `["media","search",q]`, `enabled`, `placeholderData: keepPreviousData`).
+- `hooks/usePlaylists.ts`: `usePlaylists()`, `usePlaylist(id)`, `useRegisterPlaylist()`, `useRemovePlaylist()` (invalidan `["playlists"]`).
 
 ### Cliente HTTP / SSE
 - `api/http.ts`: `request<T>(path, schema, init)` → fetch, lanza `ApiError` en no-2xx, valida con el schema de Zod. **Tolera respuestas vacías** (los `@Post` de Nest devuelven 201 con body vacío).
-- `api/queue.ts`, `api/player.ts`: métodos tipados.
-- `context/RealtimeProvider.tsx`: un solo `EventSource` a `/events`. **Ojo**: el `type` del evento está en `message.type` (nombre del evento), no en el body; hay que parsear `{ type: message.type, data: JSON.parse(message.data) }` con `realtimeEventSchema`.
+- `context/RealtimeProvider.tsx`: un solo `EventSource` a `/events`. **Ojo**: el `type` del evento está en `message.type` (nombre del evento), no en el body; hay que parsear `{ type: message.type, data: JSON.parse(message.data) }` con `realtimeEventSchema`. Además hace `queryClient.setQueryData(["queue"], data)` en cada `queue.updated` para mantener viva la caché.
+- `context/RealtimeContext.tsx`: expone `{ lastEvent, isConnected, error }` vía `useRealtime()` (lo usa la pantalla para reaccionar a `player.command`).
 
 ### Sistema de diseño (UI)
-Estilo **brutalista** moderado, decidido para no verse genérico:
+**shadcn/ui** (Base UI, estilo `base-luma`), instalado con `npx shadcn add <component>` (desde `apps/web`). Personalización fina pendiente. Hay una skill de shadcn en `apps/web/.agents/skills/shadcn/` (reglas de styling/forms/composition/icons) para consultar al tocar UI.
 
-- **Sin** `border-radius`, **sin** `shadow`. Bordes duros de 2px (`border-2`).
-- Tipografía en `uppercase` + `font-bold` para títulos y botones.
-- Iconos de **lucide-react** (nada de emojis).
-- Paleta definida como **tokens semánticos** en `app.css` (Tailwind v4 `@theme inline` + variables CSS):
-  - Tema claro cálido (por defecto): `--surface #faf7f2`, `--surface-card #ffffff`, `--ink #292524`, `--ink-muted #78716c`, `--accent #d97706` (ámbar), `--line #e7e5e4`.
-  - `.theme-dark` (solo `/player`): negro puro con ámbar `#f59e0b`; el video es el protagonista.
-- Usa las utilities semánticas (`bg-surface`, `text-ink`, `bg-accent`, `divide-line`, …), **no** colores hardcodeados, para que los componentes compartidos se adapten por contexto (`.theme-dark`).
-- Tailwind v4 pone `cursor: default` en botones → añadir `cursor-pointer` explícito.
+- Componentes en `components/ui/*`: `button`, `input`, `card`, `badge`, `separator`, `spinner`, `collapsible`, `tooltip`, `scroll-area` (sin usar), `dropdown-menu`, `empty`, `skeleton`, `toast`.
+- Config en `apps/web/components.json` (alias `~/components/ui`, base `base`, iconLibrary `lucide`).
+- Tokens semánticos de shadcn en `app.css`: `bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`, `bg-muted`, `text-destructive`, `bg-card`, … **No** usar colores hardcodeados (los tokens custom previos `--surface/--ink/--line/--accent` quedaron obsoletos).
+- `--radius: 0` se mantiene (esquinas cuadradas). `Card` trae `shadow-md`/`ring-foreground/5` por defecto.
+- `.theme-dark` (solo `/player`) sobreescribe los tokens de shadcn: fondo negro + `--primary #f59e0b` (ámbar); el video es el protagonista.
+- Iconos de **lucide-react**. Dentro de `Button` usar `data-icon="inline-start"`/`inline-end` sin clases de tamaño.
+- Convenciones shadcn: `cn()` para clases condicionales, `gap-*` (no `space-*`), `size-*` para dimensiones iguales, `truncate`, y componentes `Empty`/`Skeleton`/`Badge`/`Tooltip`/`toast`/`DropdownMenu` en vez de markup custom.
 
 ## 8. Gotchas / decisiones registradas
 
@@ -151,16 +178,21 @@ Estilo **brutalista** moderado, decidido para no verse genérico:
 - **TypeScript en web**: `SubmitEventHandler<HTMLFormElement>` para `onSubmit` (ni `FormEvent` ni `FormEventHandler`, ambos deprecados).
 - **`duration`**: en BD se guarda ISO-8601 (string); en el DTO se normaliza a **segundos (number)** (usa `Temporal` en el mapper del backend; Node ≥ 26 lo trae global).
 - **Prisma client generado** está gitignoreado → `npx prisma generate` tras clonar o migrar.
+- **`_count` en Prisma 7** va **dentro de `include`** (`include: { _count: { select: { items: true } } }`), no top-level.
+- **`ScrollArea` (Base UI)** no se usa: su viewport usa `size-full` y necesita altura definida; con `max-h-*` el contenido se desbordaba y solapaba lo siguiente. Usar `overflow-y-auto` + `max-h-*` nativo.
+- **Sin `h-screen` fijo** en la vista de control: rompía el expand de las playlists. La página scrollea natural; la cola del panel usa `lg:sticky` + `lg:max-h-[calc(100vh-8rem)]`.
+- **Expandir playlist** con `Collapsible`/`CollapsibleTrigger`/`CollapsibleContent` de shadcn (sin animación por ahora). El `Collapsible` debe envolver trigger + contenido como un único árbol.
+- **Parsing de YouTube**: no validar el array entero de `videos` con schema estricto (un ítem inválido descartaba el lote). Usar parseo leniente por ítem y saltar solo los no disponibles.
 
 ## 9. Pendiente (evolución futura)
 
 1. **Autenticación / roles**: separar "cliente" (añadir) de "panel" (control). Hoy la API no restringe nada.
 2. **Tests**: `apps/api/test/app.e2e-spec.ts` está roto (espera `GET /` → "Hello World!"); no hay tests de servicios.
-5. Nombres del bar / branding configurables en la vista de cliente.
+3. Nombres del bar / branding configurables en la vista de cliente.
 
 ## 10. Cómo hacer cambios (resumen del flujo que seguimos)
 
 1. Si cambia la forma de datos de la API → actualizar `packages/contracts` y reconstruir (`npm run build -w @skrd/contracts`).
 2. Backend: endpoint/service → validar con Zod → mapear a DTO → emitir eventos SSE pertinentes.
-3. Frontend: método en `api/*.ts` (con schema de validación) → consumir en el componente/route → estilos con tokens semánticos.
+3. Frontend: método en `api/*.ts` (con schema de validación) → hook de TanStack Query en `hooks/*` → consumir en el componente/route → componentes shadcn + tokens semánticos.
 4. Verificar: `npm run typecheck` (raíz). No hay suite de tests fiable todavía.
