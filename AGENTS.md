@@ -30,11 +30,11 @@ player/
 
 ## 3. Stack
 
-| Paquete     | Tecnología                                                                                          |
-| ----------- | --------------------------------------------------------------------------------------------------- |
-| `api`       | NestJS 11, Prisma 7 (`prisma-client` + `adapter-pg`), Zod 4, SSE, Swagger (`/api`)                  |
+| Paquete     | Tecnología                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `api`       | NestJS 11, Prisma 7 (`prisma-client` + `adapter-pg`), Zod 4, SSE, Swagger (`/api`)                                                 |
 | `web`       | React Router 8 (SSR), Vite 8, Tailwind CSS 4, **shadcn/ui (Base UI)**, **TanStack Query**, `lucide-react`, `@dnd-kit/react`, Zod 4 |
-| `contracts` | Zod 4 + TypeScript, compilado con `tsup` a doble formato (CJS + ESM)                                |
+| `contracts` | Zod 4 + TypeScript, compilado con `tsup` a doble formato (CJS + ESM)                                                               |
 
 ## 4. Comandos (desde la raíz)
 
@@ -67,11 +67,13 @@ npm run typecheck             # contracts + typecheck web + build api
 **Regla:** cualquier cambio en la forma de una respuesta o evento se hace aquí y luego se propaga. El front valida las respuestas en runtime con estos schemas.
 
 ### Nota de build (importante)
+
 `contracts` compila a **doble formato** (CJS + ESM) con `tsup` porque Nest es CJS (`require`) y Vite/SSR inlinea los paquetes enlazados como ESM. No lo cambies a un solo formato sin revisar ambos consumidores. Config: `packages/contracts/tsup.config.ts` + `tsconfig.json` (usa `ignoreDeprecations: "6.0"` por TypeScript 6).
 
 ## 6. Backend (`apps/api`)
 
 ### Modelo de datos (Prisma)
+
 - `MediaItem`: metadata de un video de YouTube (videoId único en la práctica; título, canal, thumbnail, duración ISO en la columna, embeddable).
 - `QueueItem`: `position` (float, reorden fraccionario), `status` (enum `QueueStatus`: `queued | playing | paused`), `mediaId`.
 - `Playlist`: playlist de backup registrada (`playlistId` único = id de YouTube, `title`, `thumbnailUrl`).
@@ -79,51 +81,59 @@ npm run typecheck             # contracts + typecheck web + build api
 - **Cursor de reproducción** = el único `QueueItem` con `status` `playing` (o `paused`). No existe `ended`: al terminar una canción vuelve a `queued` y queda en la cola.
 
 ### Endpoints
-| Método | Ruta                    | Descripción                                            |
-| ------ | ----------------------- | ------------------------------------------------------ |
-| GET    | `/queue`                | cola actual ordenada por `position`                    |
-| POST   | `/queue/append`         | `{ url }` → resuelve y añade al final                  |
-| POST   | `/queue/append/video/:videoId` | añade a la cola por `videoId` (desde playlist/biblioteca) |
-| POST   | `/queue/item/:id/move`  | `{ siblingId, placement: "before"\|"after" }` reordena |
-| DELETE | `/queue/item/:id`       | elimina un item                                        |
-| DELETE | `/queue/clear`          | vacía la cola                                          |
-| POST   | `/queue/push`           | fuerza `queue.updated` (broadcast manual)              |
-| GET    | `/media?q=`             | busca media registrada (biblioteca)                    |
-| GET    | `/playlist`             | lista playlists de backup                              |
-| POST   | `/playlist`             | `{ url }` → registra/refresca una playlist (importa items) |
-| GET    | `/playlist/:id`         | detalle de una playlist (con `items: MediaItemDto[]`)  |
-| DELETE | `/playlist/:id`         | elimina una playlist                                   |
-| POST   | `/player/play`          | reproduce/resume (idempotente)                         |
-| POST   | `/player/pause`         | pausa                                                  |
-| POST   | `/player/next`          | siguiente                                              |
-| POST   | `/player/previous`      | anterior                                               |
-| POST   | `/player/item/:id/play` | reproduce un item concreto (selección en el panel)     |
-| POST   | `/player/events/ended`  | el front avisa que una canción terminó                 |
-| GET    | `/events`               | SSE (realtime)                                         |
-| GET    | `/api`                  | Swagger UI                                             |
+
+| Método | Ruta                           | Descripción                                                |
+| ------ | ------------------------------ | ---------------------------------------------------------- |
+| GET    | `/queue`                       | cola actual ordenada por `position`                        |
+| POST   | `/queue/append`                | `{ url }` → resuelve y añade al final                      |
+| POST   | `/queue/append/video/:videoId` | añade a la cola por `videoId` (desde playlist/biblioteca)  |
+| POST   | `/queue/item/:id/move`         | `{ siblingId, placement: "before"\|"after" }` reordena     |
+| DELETE | `/queue/item/:id`              | elimina un item                                            |
+| DELETE | `/queue/clear`                 | vacía la cola                                              |
+| POST   | `/queue/push`                  | fuerza `queue.updated` (broadcast manual)                  |
+| GET    | `/media?q=`                    | busca media registrada (biblioteca)                        |
+| GET    | `/playlist`                    | lista playlists de backup                                  |
+| POST   | `/playlist`                    | `{ url }` → registra/refresca una playlist (importa items) |
+| GET    | `/playlist/:id`                | detalle de una playlist (con `items: MediaItemDto[]`)      |
+| DELETE | `/playlist/:id`                | elimina una playlist                                       |
+| POST   | `/player/play`                 | reproduce/resume (idempotente)                             |
+| POST   | `/player/pause`                | pausa                                                      |
+| POST   | `/player/next`                 | siguiente                                                  |
+| POST   | `/player/previous`             | anterior                                                   |
+| POST   | `/player/item/:id/play`        | reproduce un item concreto (selección en el panel)         |
+| POST   | `/player/events/ended`         | el front avisa que una canción terminó                     |
+| GET    | `/events`                      | SSE (realtime)                                             |
+| GET    | `/api`                         | Swagger UI                                                 |
 
 ### Realtime (SSE)
+
 `GET /events` emite dos tipos de evento (el `type` es el **nombre del evento SSE**, no va dentro del `data`):
+
 - `queue.updated` → `data` = `QueueDto` (toda la cola).
 - `player.command` → `data` = `PlayerCommandDto`.
 
 ### Flujo de reproducción (unidireccional)
+
 ```
 front (botón/ended) → POST /player/* → backend actualiza status + emite player.command + queue.updated
   → pantalla recibe player.command y actúa sobre el iframe de YouTube
 ```
+
 El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un comando.
 
 ### YouTube Data API (servicio)
+
 - `YoutubeService` usa `@nestjs/axios` y valida con Zod. Métodos: `getVideoInfo`, `getVideosInfo` (bulk, lotes de 50), `getPlaylistInfo`, `listPlaylistVideoIds` (paginando `playlistItems` con `nextPageToken`).
 - **Parsing leniente**: `getVideosInfo` usa `youtubeListLenientSchema` (por ítem, con `contentDetails`/`status`/`thumbnails` opcionales) y salta solo los videos inválidos (privados/eliminados). No validar el array entero con schema estricto: un solo ítem malo descartaba el lote entero de 50.
 
 ### Playlist de backup (reproducción en cola vacía)
+
 - `register` trae todos los `videoId` de la playlist (paginado) → `mediaService.resolveMany` en bulk → `createMany` de `PlaylistItem` (con `position`). Re-registrar reemplaza los items (idempotente por `playlistId`).
 - **Deduplicación**: el `@@unique([playlistId, mediaId])` exige deduplicar por `media.id` antes de `createMany` (las playlists pueden repetir canciones).
 - Cuando la cola se queda sin siguiente (o `play` con cola vacía), `PlayerService` toma un `MediaItem` random de las playlists (`PlaylistService.randomMedia()`) y lo encola + reproduce. Sin playlists → `stop` (comportamiento previo).
 
 ### Convenciones
+
 - Validación de inputs con `ZodValidationPipe` + schemas de `@skrd/contracts`.
 - Serialización de respuestas con mappers (`queue/queue.mapper.ts`): Prisma → DTO normalizado (`duration` ISO → segundos con `Temporal`).
 - Errores: `HttpExceptionFilter` global devuelve siempre `{ statusCode, message, errors? }`.
@@ -132,6 +142,7 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 ## 7. Frontend (`apps/web`)
 
 ### Rutas
+
 | Ruta        | Archivo              | Rol                                                 |
 | ----------- | -------------------- | --------------------------------------------------- |
 | `/` (index) | `routes/client.tsx`  | vista del cliente (añadir + ver cola, solo lectura) |
@@ -139,6 +150,7 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 | `/player`   | `routes/player.tsx`  | pantalla (video + cola, sin interacción)            |
 
 ### Componentes
+
 - `YoutubePlayer.tsx`: iframe de YouTube; se maneja por `ref` (play/pause/stop); emite `onEnded` cuando el video termina (`YT.PlayerState.ENDED`).
 - `Queue.tsx`: cola de solo lectura (cliente).
 - `PlayerQueue.tsx`: cola de la pantalla (más grande, resalta actual con borde izquierdo + fondo, auto-scroll al item actual).
@@ -149,6 +161,7 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 - `MediaLibrary.tsx`: búsqueda de media registrada (biblioteca) con añadir a cola.
 
 ### Data fetching (TanStack Query)
+
 - Todas las llamadas a API pasan por hooks de TanStack Query (caché + mutaciones). Los métodos crudos viven en `api/*.ts` (`http.ts`, `queue.ts`, `player.ts`, `media.ts`, `playlist.ts`).
 - `hooks/useQueue.ts`: `useQueue()` (query `["queue"]`, `staleTime: Infinity`) + mutaciones (`useAppendToQueue`, `useAppendVideoToQueue`, `useMoveQueueItem`, `useRemoveQueueItem`, `useClearQueue`). La cola **no se refetchea**: se actualiza por SSE.
 - `hooks/usePlayer.ts`: `usePlayerActions()` (mutaciones play/pause/next/previous/ended/playItem).
@@ -156,11 +169,13 @@ El iframe **solo** reacciona a `player.command`; nunca se reproduce fuera de un 
 - `hooks/usePlaylists.ts`: `usePlaylists()`, `usePlaylist(id)`, `useRegisterPlaylist()`, `useRemovePlaylist()` (invalidan `["playlists"]`).
 
 ### Cliente HTTP / SSE
+
 - `api/http.ts`: `request<T>(path, schema, init)` → fetch, lanza `ApiError` en no-2xx, valida con el schema de Zod. **Tolera respuestas vacías** (los `@Post` de Nest devuelven 201 con body vacío).
 - `context/RealtimeProvider.tsx`: un solo `EventSource` a `/events`. **Ojo**: el `type` del evento está en `message.type` (nombre del evento), no en el body; hay que parsear `{ type: message.type, data: JSON.parse(message.data) }` con `realtimeEventSchema`. Además hace `queryClient.setQueryData(["queue"], data)` en cada `queue.updated` para mantener viva la caché.
 - `context/RealtimeContext.tsx`: expone `{ lastEvent, isConnected, error }` vía `useRealtime()` (lo usa la pantalla para reaccionar a `player.command`).
 
 ### Sistema de diseño (UI)
+
 **shadcn/ui** (Base UI, estilo `base-luma`), instalado con `npx shadcn add <component>` (desde `apps/web`). Personalización fina pendiente. Hay una skill de shadcn en `apps/web/.agents/skills/shadcn/` (reglas de styling/forms/composition/icons) para consultar al tocar UI.
 
 - Componentes en `components/ui/*`: `button`, `input`, `card`, `badge`, `separator`, `spinner`, `collapsible`, `tooltip`, `scroll-area` (sin usar), `dropdown-menu`, `empty`, `skeleton`, `toast`.

@@ -1,18 +1,28 @@
-import { ChevronDown, ChevronRight, EllipsisVertical, ExternalLink, Trash2 } from "lucide-react";
-import type { PlaylistDto } from "@skrd/contracts";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import {
+  ChevronDown,
+  ChevronRight,
+  EllipsisVertical,
+  ExternalLink,
+  Trash2,
+} from 'lucide-react';
+import type { PlaylistDto } from '@skrd/contracts';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '~/components/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { toast } from "~/components/ui/toast";
-import { useRemovePlaylist } from "~/hooks/usePlaylists";
-import { PlaylistItems } from "./PlaylistItems";
+} from '~/components/ui/dropdown-menu';
+import { toast } from '~/components/ui/toast';
+import { useRemovePlaylist } from '~/hooks/usePlaylists';
+import { PlaylistItems } from './PlaylistItems';
 
 type Props = {
   playlist: PlaylistDto;
@@ -27,9 +37,9 @@ export const PlaylistRow = ({ playlist, isExpanded, onToggle }: Props) => {
     try {
       await removeMutation.mutateAsync(playlist.id);
       if (isExpanded) onToggle(false);
-      toast.add({ type: "success", title: "Playlist eliminada" });
+      toast.add({ type: 'success', title: 'Playlist eliminada' });
     } catch {
-      toast.add({ type: "error", title: "No se pudo eliminar la playlist" });
+      toast.add({ type: 'error', title: 'No se pudo eliminar la playlist' });
     }
   };
 
@@ -38,21 +48,40 @@ export const PlaylistRow = ({ playlist, isExpanded, onToggle }: Props) => {
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
         <div className="flex items-center mb-2">
           <CollapsibleTrigger
-            render={<Button variant="ghost" className="h-auto flex-1 justify-start gap-3 px-2 py-2 text-left" />}
+            render={
+              <Button
+                variant="ghost"
+                className="h-auto flex-1 justify-start gap-3 px-2 py-2 text-left"
+              />
+            }
           >
             {playlist.thumbnailUrl && (
-              <img src={playlist.thumbnailUrl} alt="" className="h-9 w-12 shrink-0 object-cover" />
+              <img
+                src={playlist.thumbnailUrl}
+                alt=""
+                className="h-9 w-12 shrink-0 object-cover"
+              />
             )}
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium">{playlist.title}</span>
-              <Badge variant="secondary" className="mt-1">{playlist.itemCount} canciones</Badge>
+              <span className="block truncate font-medium">
+                {playlist.title}
+              </span>
+              <Badge variant="secondary" className="mt-1">
+                {playlist.itemCount} canciones
+              </Badge>
             </span>
             {isExpanded ? <ChevronDown /> : <ChevronRight />}
           </CollapsibleTrigger>
 
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" aria-label="Acciones de la playlist" />}
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Acciones de la playlist"
+                />
+              }
             >
               <EllipsisVertical />
             </DropdownMenuTrigger>
@@ -61,8 +90,8 @@ export const PlaylistRow = ({ playlist, isExpanded, onToggle }: Props) => {
                 onClick={() =>
                   window.open(
                     `https://www.youtube.com/playlist?list=${playlist.playlistId}`,
-                    "_blank",
-                    "noopener,noreferrer"
+                    '_blank',
+                    'noopener,noreferrer',
                   )
                 }
               >

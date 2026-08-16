@@ -1,26 +1,26 @@
 {
-    "name": "@skrd/contracts",
-    "version": "0.0.1",
-    "private": true,
-    "main": "./dist/index.cjs",
-    "module": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.mjs",
-            "require": "./dist/index.cjs"
-        }
-    },
-    "scripts": {
-        "build": "tsup",
-        "dev": "tsup --watch"
-    },
-    "dependencies": {
-        "zod": "^4.4.3"
-    },
-    "devDependencies": {
-        "typescript": "^5.9.3",
-        "tsup": "^8.5.1"
+  "name": "@skrd/contracts",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "tsup": "^8.5.1"
+  }
 }

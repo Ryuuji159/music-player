@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from "react";
+import React, { useEffect, useImperativeHandle, useRef } from 'react';
 
 export interface PlayerAction {
   play: (videoId: string | null) => void;
@@ -10,7 +10,7 @@ type Props = {
   onEnded: () => void;
   onError: (code: number) => void;
   ref?: React.Ref<PlayerAction>;
-}
+};
 
 export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,11 +52,11 @@ export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
       if (!containerRef.current) return;
 
       playerRef.current = new window.YT.Player(containerRef.current, {
-        width: "100%",
-        height: "100%",
+        width: '100%',
+        height: '100%',
         playerVars: {},
         events: {
-          onReady: (event) => {
+          onReady: (_event) => {
             const pending = pendingVideoIdRef.current;
             if (pending) {
               playerRef.current?.loadVideoById(pending);
@@ -70,7 +70,7 @@ export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
             }
           },
           onError: (event) => {
-            if (typeof event.data === "number") {
+            if (typeof event.data === 'number') {
               onErrorRef.current?.(event.data);
             }
           },
@@ -83,10 +83,10 @@ export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
       return;
     }
 
-    if (!document.getElementById("youtube-iframe-api")) {
-      const script = document.createElement("script");
-      script.id = "youtube-iframe-api";
-      script.src = "https://www.youtube.com/iframe_api";
+    if (!document.getElementById('youtube-iframe-api')) {
+      const script = document.createElement('script');
+      script.id = 'youtube-iframe-api';
+      script.src = 'https://www.youtube.com/iframe_api';
       document.body.appendChild(script);
     }
 
@@ -95,8 +95,8 @@ export const YoutubePlayer = ({ onEnded, onError, ref }: Props) => {
     return () => {
       playerRef.current?.destroy();
       playerRef.current = null;
-    }
+    };
   }, []);
 
   return <div ref={containerRef} className="h-full w-full" />;
-}
+};

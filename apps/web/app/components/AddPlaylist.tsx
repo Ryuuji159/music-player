@@ -1,15 +1,15 @@
-import { useState, type SubmitEventHandler } from "react";
-import { ListPlus } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Spinner } from "~/components/ui/spinner";
-import { toast } from "~/components/ui/toast";
-import { usePlaylists, useRegisterPlaylist } from "~/hooks/usePlaylists";
-import { PlaylistRow } from "./PlaylistRow";
+import { useState, type SubmitEventHandler } from 'react';
+import { ListPlus } from 'lucide-react';
+import { Button } from '~/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Input } from '~/components/ui/input';
+import { Spinner } from '~/components/ui/spinner';
+import { toast } from '~/components/ui/toast';
+import { usePlaylists, useRegisterPlaylist } from '~/hooks/usePlaylists';
+import { PlaylistRow } from './PlaylistRow';
 
 export const AddPlaylist = () => {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const playlistsQuery = usePlaylists();
@@ -22,12 +22,12 @@ export const AddPlaylist = () => {
 
     try {
       await registerMutation.mutateAsync(url);
-      setUrl("");
-      toast.add({ type: "success", title: "Playlist registrada" });
+      setUrl('');
+      toast.add({ type: 'success', title: 'Playlist registrada' });
     } catch (err) {
       toast.add({
-        type: "error",
-        title: "No se pudo añadir la playlist",
+        type: 'error',
+        title: 'No se pudo añadir la playlist',
         description: err instanceof Error ? err.message : undefined,
       });
     }
@@ -56,13 +56,15 @@ export const AddPlaylist = () => {
                 Cargando
               </>
             ) : (
-              "Añadir"
+              'Añadir'
             )}
           </Button>
         </form>
 
         {registerMutation.isPending && (
-          <p className="text-sm text-muted-foreground">Importando canciones de la playlist, puede tardar unos segundos…</p>
+          <p className="text-sm text-muted-foreground">
+            Importando canciones de la playlist, puede tardar unos segundos…
+          </p>
         )}
 
         {playlists.length > 0 && (

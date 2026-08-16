@@ -21,7 +21,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "incremental": true,
-    
+
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
 

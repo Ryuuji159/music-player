@@ -1,15 +1,24 @@
-import { useState } from "react";
-import { Check, Plus } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "~/components/ui/empty";
-import { Input } from "~/components/ui/input";
-import { Skeleton } from "~/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
-import { useAppendVideoToQueue } from "~/hooks/useQueue";
-import { usePlaylist } from "~/hooks/usePlaylists";
+import { useState } from 'react';
+import { Check, Plus } from 'lucide-react';
+import { Button } from '~/components/ui/button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '~/components/ui/empty';
+import { Input } from '~/components/ui/input';
+import { Skeleton } from '~/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/components/ui/tooltip';
+import { useAppendVideoToQueue } from '~/hooks/useQueue';
+import { usePlaylist } from '~/hooks/usePlaylists';
 
 export const PlaylistItems = ({ playlistId }: { playlistId: string }) => {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [addedId, setAddedId] = useState<string | null>(null);
 
   const detailQuery = usePlaylist(playlistId);
@@ -22,7 +31,7 @@ export const PlaylistItems = ({ playlistId }: { playlistId: string }) => {
       ? detail.items.filter(
           (m) =>
             m.title.toLowerCase().includes(searchQuery) ||
-            m.channelTitle.toLowerCase().includes(searchQuery)
+            m.channelTitle.toLowerCase().includes(searchQuery),
         )
       : detail.items
     : [];
@@ -31,7 +40,10 @@ export const PlaylistItems = ({ playlistId }: { playlistId: string }) => {
     try {
       await appendMutation.mutateAsync(videoId);
       setAddedId(videoId);
-      setTimeout(() => setAddedId((cur) => (cur === videoId ? null : cur)), 1500);
+      setTimeout(
+        () => setAddedId((cur) => (cur === videoId ? null : cur)),
+        1500,
+      );
     } catch (err) {
       console.error(err);
     }
@@ -56,10 +68,16 @@ export const PlaylistItems = ({ playlistId }: { playlistId: string }) => {
           <ul className="max-h-96 divide-y divide-border overflow-y-auto">
             {filteredItems.map((media) => (
               <li key={media.id} className="flex items-center gap-3 py-2">
-                <img src={media.thumbnailUrl} alt="" className="h-12 w-20 shrink-0 object-cover" />
+                <img
+                  src={media.thumbnailUrl}
+                  alt=""
+                  className="h-12 w-20 shrink-0 object-cover"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{media.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">{media.channelTitle}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {media.channelTitle}
+                  </p>
                 </div>
                 <Tooltip>
                   <TooltipTrigger
@@ -83,7 +101,9 @@ export const PlaylistItems = ({ playlistId }: { playlistId: string }) => {
           <Empty className="p-4">
             <EmptyHeader>
               <EmptyTitle>No se encontraron canciones</EmptyTitle>
-              <EmptyDescription>Prueba con otro término de búsqueda.</EmptyDescription>
+              <EmptyDescription>
+                Prueba con otro término de búsqueda.
+              </EmptyDescription>
             </EmptyHeader>
           </Empty>
         )

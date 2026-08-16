@@ -1,9 +1,9 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/ibm-plex-sans";
-@import "@fontsource-variable/space-grotesk";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource-variable/space-grotesk';
 
 @custom-variant dark (&:is(.dark *));
 

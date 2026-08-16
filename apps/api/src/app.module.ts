@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from "@nestjs/config";
+import { ConfigModule } from '@nestjs/config';
 import { QueueModule } from './queue/queue.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { YoutubeModule } from './youtube/youtube.module';
@@ -16,4 +16,4 @@ import { PlaylistModule } from './playlist/playlist.module';
     PlaylistModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}
