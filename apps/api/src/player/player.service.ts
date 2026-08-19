@@ -219,7 +219,19 @@ export class PlayerService {
   }
 
   private async playBackup(venueId: string) {
-    const media = await this.playlistService.randomMedia(venueId);
+    let media = await this.playlistService.randomMedia(venueId);
+
+    for (let attempt = 0; media && attempt < 3; attempt += 1) {
+      const queued = await this.prisma.queueItem.findFirst({
+        select: { id: true },
+        where: { venueId, mediaId: media.id },
+      });
+
+      if (!queued || attempt === 2) break;
+
+      media = await this.playlistService.randomMedia(venueId);
+    }
+
     if (!media) {
       await this.emitPlayerCommand(venueId, 'stop', null);
       await this.emitQueueUpdated(venueId);
