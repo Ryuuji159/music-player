@@ -11,6 +11,7 @@ import { VenuesModule } from './venues/venues.module';
 import { UsersModule } from './users/users.module';
 import { InviteModule } from './invite/invite.module';
 import { SettingsModule } from './settings/settings.module';
+import { AdminMediaModule } from './admin-media/admin-media.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SettingsModule } from './settings/settings.module';
     UsersModule,
     InviteModule,
     SettingsModule,
+    AdminMediaModule,
   ],
 })
 export class AppModule {}

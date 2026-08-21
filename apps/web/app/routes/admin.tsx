@@ -13,6 +13,7 @@ export function meta(_args: Route.MetaArgs) {
 const navItems = [
   { to: '/admin/venues', label: 'Venues' },
   { to: '/admin/users', label: 'Usuarios' },
+  { to: '/admin/media', label: 'Medias' },
 ];
 
 function AdminLayout() {

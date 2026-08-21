@@ -6,6 +6,7 @@ export default [
     index('./routes/admin.index.tsx'),
     route('venues', './routes/admin.venues.tsx'),
     route('users', './routes/admin.users.tsx'),
+    route('media', './routes/admin.media.tsx'),
   ]),
   route('/select', './routes/select.tsx'),
   route('/join/:token', './routes/join.tsx'),

@@ -1,3 +1,4 @@
+export * from './admin-media.schema';
 export * from './api-error.schema';
 export * from './append-to-queue.schema';
 export * from './create-song-request.schema';
