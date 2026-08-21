@@ -26,12 +26,13 @@ enum UserRole {
 }
 
 model Venue {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug      String   @unique
-  name      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String   @unique
+  name        String
+  skipOnError Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
-  users        User[]  @relation("UserVenues")
+  users        User[]            @relation("UserVenues")
   queueItems   QueueItem[]
   songRequests SongRequest[]
   playlists    Playlist[]
@@ -64,6 +65,8 @@ model VenueInvite {
   expiresAt DateTime
 
   venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@index([venueId])
 }
 
 model VenueMediaError {
@@ -82,7 +85,7 @@ model VenueMediaError {
 model MediaItem {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  videoId      String
+  videoId      String  @unique
   title        String
   channelTitle String
   thumbnailUrl String
@@ -106,6 +109,10 @@ model QueueItem {
 
   media MediaItem @relation(fields: [mediaId], references: [id])
   venue Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@index([venueId, position])
+  @@index([venueId, status])
+  @@index([venueId, mediaId])
 }
 
 model SongRequest {
@@ -118,6 +125,8 @@ model SongRequest {
 
   media MediaItem @relation(fields: [mediaId], references: [id])
   venue Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@index([venueId, status])
 }
 
 model Playlist {
@@ -128,7 +137,7 @@ model Playlist {
   thumbnailUrl String?
   createdAt    DateTime @default(now())
 
-  venue Venue         @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue Venue          @relation(fields: [venueId], references: [id], onDelete: Cascade)
   items PlaylistItem[]
 
   @@unique([venueId, playlistId])

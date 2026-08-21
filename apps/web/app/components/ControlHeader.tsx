@@ -1,5 +1,6 @@
 import { ExternalLink, LogOut, MapPin, Smartphone } from 'lucide-react';
 import { Button } from '~/components/ui/button';
+import { SkipOnErrorToggle } from '~/components/SkipOnErrorToggle';
 import { useAuth, useLogout } from '~/hooks/useAuth';
 import { useVenueSlug } from '~/hooks/useVenueSlug';
 
@@ -35,6 +36,7 @@ export const ControlHeader = () => {
           </Button>
         )}
         <span className="text-sm text-muted-foreground">{user?.name}</span>
+        <SkipOnErrorToggle />
         <Button variant="ghost" onClick={() => logout.mutate()}>
           <LogOut data-icon="inline-start" />
           Salir

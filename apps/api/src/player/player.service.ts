@@ -116,6 +116,12 @@ export class PlayerService {
       update: { errorCode: code },
     });
 
+    const venue = await this.prisma.venue.findUnique({
+      where: { id: venueId },
+      select: { skipOnError: true },
+    });
+    if (venue && !venue.skipOnError) return;
+
     await this.advance(venueId, true);
   }
 

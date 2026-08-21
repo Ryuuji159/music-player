@@ -20,24 +20,45 @@ export type RealtimeEvent =
       data: SongRequestListDto;
     };
 
+type Channel = {
+  subject: Subject<RealtimeEvent>;
+  subscribers: number;
+};
+
 @Injectable()
 export class EventsService {
-  private readonly channels = new Map<string, Subject<RealtimeEvent>>();
+  private readonly channels = new Map<string, Channel>();
 
-  private channel(venueId: string): Subject<RealtimeEvent> {
-    let subject = this.channels.get(venueId);
-    if (!subject) {
-      subject = new Subject<RealtimeEvent>();
-      this.channels.set(venueId, subject);
+  private channel(venueId: string): Channel {
+    let channel = this.channels.get(venueId);
+    if (!channel) {
+      channel = { subject: new Subject<RealtimeEvent>(), subscribers: 0 };
+      this.channels.set(venueId, channel);
     }
-    return subject;
+    return channel;
   }
 
   emit(venueId: string, event: RealtimeEvent) {
-    this.channel(venueId).next(event);
+    const channel = this.channels.get(venueId);
+    if (!channel || channel.subscribers === 0) return;
+    channel.subject.next(event);
   }
 
   events(venueId: string): Observable<RealtimeEvent> {
-    return this.channel(venueId).asObservable();
+    return new Observable<RealtimeEvent>((subscriber) => {
+      const channel = this.channel(venueId);
+      channel.subscribers += 1;
+
+      const subscription = channel.subject.subscribe(subscriber);
+
+      return () => {
+        subscription.unsubscribe();
+        channel.subscribers -= 1;
+        if (channel.subscribers <= 0) {
+          channel.subject.complete();
+          this.channels.delete(venueId);
+        }
+      };
+    });
   }
 }

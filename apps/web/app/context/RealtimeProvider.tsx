@@ -42,6 +42,7 @@ export const RealTimeProvider = ({ slug, children }: Props) => {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDelay = RECONNECT_INITIAL_DELAY;
     let disposed = false;
+    let hasConnected = false;
 
     const dispatch = (event: Event) => {
       const message = event as MessageEvent<string>;
@@ -70,6 +71,11 @@ export const RealTimeProvider = ({ slug, children }: Props) => {
         setIsConnected(true);
         setError(null);
         reconnectDelay = RECONNECT_INITIAL_DELAY;
+        if (hasConnected) {
+          queryClient.invalidateQueries({ queryKey: queueKeys.list(slug) });
+          queryClient.invalidateQueries({ queryKey: requestKeys.list(slug) });
+        }
+        hasConnected = true;
       };
 
       source.onerror = () => {
@@ -99,7 +105,7 @@ export const RealTimeProvider = ({ slug, children }: Props) => {
       eventSource?.close();
       eventSource = null;
     };
-  }, [slug]);
+  }, [slug, queryClient]);
 
   useEffect(() => {
     return subscribe((event) => {

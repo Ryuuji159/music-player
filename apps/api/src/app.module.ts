@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { VenuesModule } from './venues/venues.module';
 import { UsersModule } from './users/users.module';
 import { InviteModule } from './invite/invite.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { InviteModule } from './invite/invite.module';
     VenuesModule,
     UsersModule,
     InviteModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}

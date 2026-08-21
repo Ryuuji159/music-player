@@ -14,6 +14,7 @@ export * from './song-request.schema';
 export * from './user.schema';
 export * from './venue.schema';
 export * from './venue-invite.schema';
+export * from './venue-settings.schema';
 export * from './youtube-id.schema';
 export * from './youtube-url.schema';
 export * from './playlist.schema';
