@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsService } from '../realtime/events.service';
 import { QueueService } from '../queue/queue.service';
@@ -9,6 +9,8 @@ type CommandAction = 'play' | 'pause' | 'stop';
 
 @Injectable()
 export class PlayerService {
+  private readonly logger = new Logger(PlayerService.name);
+
   constructor(
     private prisma: PrismaService,
     private events: EventsService,
@@ -103,10 +105,14 @@ export class PlayerService {
 
   async error(venueId: string, code: number) {
     const current = await this.prisma.queueItem.findFirst({
-      select: { mediaId: true },
+      select: { mediaId: true, media: { select: { videoId: true, title: true } } },
       where: { venueId, status: { in: ['playing', 'paused'] } },
     });
     if (!current) return;
+
+    this.logger.error(
+      `Player error code=${code} venueId=${venueId} mediaId=${current.mediaId} videoId=${current.media.videoId} title="${current.media.title}"`,
+    );
 
     await this.prisma.venueMediaError.upsert({
       where: {
@@ -120,7 +126,12 @@ export class PlayerService {
       where: { id: venueId },
       select: { skipOnError: true },
     });
-    if (venue && !venue.skipOnError) return;
+    if (venue && !venue.skipOnError) {
+      this.logger.warn(
+        `Skip-on-error disabled for venueId=${venueId}; staying on current item`,
+      );
+      return;
+    }
 
     await this.advance(venueId, true);
   }

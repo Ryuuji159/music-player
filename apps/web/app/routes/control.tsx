@@ -8,6 +8,7 @@ import { AddPlaylist } from '~/components/AddPlaylist';
 import { MediaLibrary } from '~/components/MediaLibrary';
 import { SongRequests } from '~/components/SongRequests';
 import { ControlHeader } from '~/components/ControlHeader';
+import { SkipOnErrorToggle } from '~/components/SkipOnErrorToggle';
 
 export function meta(_args: Route.MetaArgs) {
   return [{ title: 'Control' }];
@@ -39,9 +40,12 @@ export default function Control() {
             </aside>
 
             <section className="flex flex-col gap-2 lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:min-h-0 lg:self-start">
-              <h2 className="shrink-0 text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                Cola actual
-              </h2>
+              <div className="flex shrink-0 items-center justify-between gap-2">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                  Cola actual
+                </h2>
+                <SkipOnErrorToggle />
+              </div>
               <QueueManager />
             </section>
           </main>
